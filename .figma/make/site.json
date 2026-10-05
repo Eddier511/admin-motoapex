@@ -1,0 +1,10 @@
+{
+  "description": "Manage all aspects of MotoApex Costa Rica's motorcycle inventory, including models, specifications, and promotions, through a user-friendly admin dashboard.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

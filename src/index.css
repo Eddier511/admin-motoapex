@@ -1,0 +1,113 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: #f8f8f9;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --primary: #f97316;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #52525b;
+  --muted: #f1f1f3;
+  --muted-foreground: #71717a;
+  --accent: #f97316;
+  --accent-foreground: #ffffff;
+  --border: #e4e4e7;
+  --ring: #f97316;
+  --radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light theme overrides for zinc text classes */
+.text-zinc-100 { color: #18181b !important; }
+.text-zinc-200 { color: #27272a !important; }
+.text-zinc-300 { color: #3f3f46 !important; }
+.text-zinc-400 { color: #52525b !important; }
+.text-zinc-500 { color: #71717a !important; }
+.text-zinc-600 { color: #a1a1aa !important; }
+.text-zinc-700 { color: #d4d4d8 !important; }
+
+/* Hover states */
+.hover\:text-zinc-200:hover { color: #18181b !important; }
+.hover\:text-zinc-300:hover { color: #27272a !important; }
+
+/* Backgrounds */
+.bg-zinc-800 { background-color: #f4f4f5 !important; }
+.bg-zinc-900\/40 { background-color: rgba(244,244,245,0.7) !important; }
+.hover\:bg-zinc-800:hover { background-color: #f4f4f5 !important; }
+.hover\:bg-zinc-800\/40:hover { background-color: rgba(244,244,245,0.6) !important; }
+.hover\:bg-zinc-800\/60:hover { background-color: rgba(244,244,245,0.8) !important; }
+
+/* Border dark */
+.border-zinc-700 { border-color: #e4e4e7 !important; }
+
+/* Scrollbar for light mode */
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'DM Sans', sans-serif;
+}
+
+code, pre, .mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Custom scrollbar behavior */
+.overflow-auto, .overflow-y-auto, .overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}
