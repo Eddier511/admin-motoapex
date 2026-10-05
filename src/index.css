@@ -111,3 +111,5 @@ code, pre, .mono {
   scrollbar-width: thin;
   scrollbar-color: #3f3f46 transparent;
 }
+
+button:disabled { opacity: 0.45; cursor: not-allowed; }
