@@ -12,6 +12,8 @@ import type { User } from "../types"
 
 import { can as hasPermission } from "../lib/permissions"
 
+import { toast } from "sonner"
+
 import type { Page, Toast } from "../types"
 
 interface AppContextType {
@@ -21,11 +23,7 @@ interface AppContextType {
 
   pageParams: Record<string, string>
 
-  toasts: Toast[]
-
   addToast: (type: Toast["type"], message: string) => void
-
-  removeToast: (id: string) => void
 
   sidebarCollapsed: boolean
 
@@ -50,8 +48,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentPage, setCurrentPage] = useState<Page>("login")
 
   const [pageParams, setPageParams] = useState<Record<string, string>>({})
-
-  const [toasts, setToasts] = useState<Toast[]>([])
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -83,15 +79,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   )
 
   const addToast = useCallback((type: Toast["type"], message: string) => {
-    const id = crypto.randomUUID()
-
-    setToasts((prev) => [...prev, { id, type, message }])
-
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000)
-  }, [])
-
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
+    toast[type](message)
   }, [])
 
   const toggleSidebar = useCallback(() => setSidebarCollapsed((c) => !c), [])
@@ -120,6 +108,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await auth.logout()
+      addToast("success", "Sesión cerrada")
     } catch (error) {
       addToast(
         "error",
@@ -142,9 +131,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         navigate,
         pageParams,
 
-        toasts,
         addToast,
-        removeToast,
 
         sidebarCollapsed,
         toggleSidebar,

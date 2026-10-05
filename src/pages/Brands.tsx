@@ -68,6 +68,7 @@ export function Brands() {
       setShowForm(true)
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -78,6 +79,7 @@ export function Brands() {
 
     if (!form.name?.trim() || !form.slug?.trim()) {
       setError("Nombre y slug son obligatorios.")
+      addToast("warning", "Nombre y slug son obligatorios.")
       return
     }
 
@@ -92,6 +94,7 @@ export function Brands() {
       remote.reload()
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -114,6 +117,7 @@ export function Brands() {
       remote.reload()
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }

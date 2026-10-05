@@ -30,8 +30,10 @@ export function Login() {
     try {
       await login(email, password)
       setPassword("")
+      addToast("success", "Sesión iniciada")
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setLoading(false)
     }

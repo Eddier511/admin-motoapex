@@ -288,6 +288,7 @@ function MotorcycleEditor({
       onSaved(result)
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -298,6 +299,7 @@ function MotorcycleEditor({
   const addColor = () => {
     if (colors.length >= 30) {
       setError("Máximo 30 colores por ficha.")
+      addToast("warning", "Máximo 30 colores por ficha.")
       return
     }
 
@@ -337,6 +339,7 @@ function MotorcycleEditor({
   const addImage = (colorId: string) => {
     if ((colors.find((c) => c.id === colorId)?.images.length ?? 0) >= 30) {
       setError("Máximo 30 imágenes por color.")
+      addToast("warning", "Máximo 30 imágenes por color.")
       return
     }
 

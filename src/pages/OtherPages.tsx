@@ -43,6 +43,7 @@ export function Categories() {
       setForm(await detail("categories", id))
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -62,6 +63,7 @@ export function Categories() {
       remote.reload()
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -84,6 +86,7 @@ export function Categories() {
       remote.reload()
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }

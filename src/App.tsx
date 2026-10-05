@@ -38,7 +38,6 @@ function AppShell() {
     return (
       <>
         <Login />
-        <ToastContainer />
       </>
     )
 
@@ -103,7 +102,6 @@ function AppShell() {
           {pageMap[currentPage] ?? <Dashboard />}
         </main>
       </div>
-      <ToastContainer />
     </div>
   )
 }
@@ -112,6 +110,7 @@ export default function App() {
   return (
     <AppProvider>
       <AppShell />
+      <ToastContainer />
     </AppProvider>
   )
 }

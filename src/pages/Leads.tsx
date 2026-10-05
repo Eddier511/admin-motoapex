@@ -17,7 +17,7 @@ import { useApp } from "../context/AppContext"
 
 import { RemoteState } from "../components/ui/RemoteState"
 
-import { Badge } from "../components/ui/Badge"
+import { Badge, statusStyle, statusLabel } from "../components/ui/Badge"
 
 import type { Lead } from "../types"
 
@@ -88,6 +88,7 @@ export function Leads() {
       addToast("success", "Lead actualizado")
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -246,7 +247,10 @@ export function Leads() {
                     <Badge status={lead.type} />
                   </td>
                   <td className="px-4 py-3">
+                    <div className="inline-flex items-center gap-2 px-2.5 py-1 border rounded-lg" style={statusStyle(lead.status)}>
+                    <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusStyle(lead.status).dot }} />
                     <select
+                      aria-label={`Estado de ${lead.name}`}
                       disabled={busy}
                       value={lead.status}
                       onChange={(e) => {
@@ -254,18 +258,15 @@ export function Leads() {
                         updateStatus(lead.id, e.target.value as Lead["status"])
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-xs bg-transparent border rounded-full px-2 py-0.5 cursor-pointer outline-none"
-                      style={{
-                        borderColor: "var(--border)",
-                        color: "var(--foreground)",
-                      }}
+                      className="text-xs font-medium bg-transparent cursor-pointer outline-none"
                     >
                       {STATUSES.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {statusLabel(s)}
                         </option>
                       ))}
                     </select>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-500">
                     {lead.assignedTo ?? "—"}
