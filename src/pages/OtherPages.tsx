@@ -303,8 +303,7 @@ export function Inventory() {
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-5">
       <p className="text-sm text-zinc-500">
-        Inventario total por motocicleta. Movimientos y existencias por color
-        pendientes de API.
+        Inventario pendiente de aprobación.
       </p>
       <div className="flex items-center gap-2">
         <Search size={15} />

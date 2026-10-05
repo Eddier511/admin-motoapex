@@ -214,22 +214,6 @@ export function ResourceModule({ kind }: { kind: string }) {
           </p>
         )}
       </div>
-      {kind === "users" && (
-        <div className="text-sm text-zinc-500 space-y-2">
-          <p>
-            Los usuarios nuevos deben cambiar su contraseña al ingresar. Roles y
-            permisos de referencia:
-          </p>
-          {remote.data?.refs.roles?.map((r) => (
-            <p key={r.code}>
-              {r.name || r.code}:{" "}
-              {(r.permissions || [])
-                .map((p: any) => (typeof p === "string" ? p : p.code))
-                .join(", ")}
-            </p>
-          ))}
-        </div>
-      )}
       {form && (
         <section className="module-editor border rounded-xl bg-card p-4 sm:p-6 space-y-5">
           <h3 className="font-semibold">

@@ -26,7 +26,7 @@ import { useRemote } from "../../lib/useRemote"
 
 import { validateMotorcycle, replaceDocument } from "../../lib/validation"
 
-import { RemoteState, Pending } from "../../components/ui/RemoteState"
+import { RemoteState } from "../../components/ui/RemoteState"
 
 import { Badge } from "../../components/ui/Badge"
 
@@ -50,7 +50,7 @@ const TABS = [
 
   { id: "multimedia", label: "Multimedia" },
 
-  { id: "seo", label: "SEO" },
+  { id: "seo", label: "Dirección web" },
 
   { id: "inventory", label: "Inventario" },
 
@@ -232,7 +232,7 @@ function MotorcycleEditor({
   const handleSave = async (publish?: boolean) => {
     if (busy || readonly) return
 
-    const document = replaceDocument(existingMoto ?? {} as Motorcycle, {
+    const document = replaceDocument(existingMoto ?? ({} as Motorcycle), {
       brandId,
       model,
       version,
@@ -1144,12 +1144,19 @@ function MotorcycleEditor({
         )}
 
         {activeTab === "multimedia" && (
-          <Pending title="Hero, card, móvil y videos; utiliza galerías por color para las fotos" />
+          <div className="max-w-3xl">
+            <Section title="Contenido multimedia">
+              <p className="text-sm text-zinc-500">
+                Esta sección estará disponible próximamente. Puedes gestionar
+                las fotos en Colores y Galerías.
+              </p>
+            </Section>
+          </div>
         )}
         {activeTab === "seo" && (
           <div className="max-w-3xl">
-            <Section title="URL de la motocicleta">
-              <Field label="Slug">
+            <Section title="Dirección web de la motocicleta">
+              <Field label="Identificador de la URL">
                 <Input
                   value={slug}
                   onChange={(v) => {
@@ -1159,8 +1166,8 @@ function MotorcycleEditor({
                 />
               </Field>
               <p className="mt-4 text-sm text-zinc-500">
-                Meta title, meta description y keywords pendientes de API. Se
-                conservan los campos devueltos por el servidor.
+                Forma parte del enlace público de esta motocicleta. Usa letras
+                minúsculas, números y guiones.
               </p>
             </Section>
           </div>
@@ -1179,9 +1186,7 @@ function MotorcycleEditor({
                 />
               </Field>
               <p className="mt-4 text-sm text-zinc-500">
-                La API v1 guarda el total por moto. Inventario distribuido por
-                color, reservas y movimientos requieren endpoints adicionales;
-                el servidor rechazará ajustes incompatibles.
+                Inventario pendiente de aprobación.
               </p>
             </Section>
           </div>
