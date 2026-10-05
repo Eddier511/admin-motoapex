@@ -81,7 +81,9 @@ export function ResourceModule({ kind }: { kind: string }) {
                 },
               ]),
         ]
-      : schema.fields
+      : kind === "banners"
+        ? schema.fields.filter((f) => f.type !== "date")
+        : schema.fields
   const run = <T,>(fn: (t?: string) => Promise<T>) =>
     schema.sensitive ? sensitive(schema.sensitive, fn) : fn()
   async function edit(id?: string) {
@@ -234,6 +236,10 @@ export function ResourceModule({ kind }: { kind: string }) {
               e.preventDefault()
               if (busy) return
               const body = editable(fields, form)
+              if (kind === "banners") {
+                body.startsAt = null
+                body.endsAt = null
+              }
               if (kind === "users") {
                 if (!body.newPassword) delete body.newPassword
                 if (body.mustChangePassword !== true)

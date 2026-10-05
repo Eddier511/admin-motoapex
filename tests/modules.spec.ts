@@ -4,22 +4,47 @@ import type { Field, Doc } from "../src/lib/moduleSchemas"
 const BASE = "https://darksalmon-quetzal-730302.hostingersite.com/v1"
 const future = "2099-12-31T23:59:59Z"
 
-test("reset invalid token and reload cannot create a session or retain reset credentials", async ({ page }) => {
+test("reset invalid token and reload cannot create a session or retain reset credentials", async ({
+  page,
+}) => {
   const state = await setup(page)
   await page.goto("/reset-password#token=expired-test")
-  state.error = { path: "/auth/password/reset", method: "POST", status: 401, code: "INVALID_RESET" }
-  await page.getByLabel("Nueva contraseña", { exact: true }).fill("Updated-disposable-password-2026")
-  await page.getByLabel("Confirmar contraseña").fill("Updated-disposable-password-2026")
+  state.error = {
+    path: "/auth/password/reset",
+    method: "POST",
+    status: 401,
+    code: "INVALID_RESET",
+  }
+  await page
+    .getByLabel("Nueva contraseña", { exact: true })
+    .fill("Updated-disposable-password-2026")
+  await page
+    .getByLabel("Confirmar contraseña")
+    .fill("Updated-disposable-password-2026")
   await page.getByRole("button", { name: "Continuar" }).click()
   await expect(page.getByRole("alert")).toContainText("INVALID_RESET")
-  await expect(page.getByRole("heading", { name: "Restablecer contraseña" })).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Restablecer contraseña" }),
+  ).toBeVisible()
   await page.reload()
-  await page.getByLabel("Nueva contraseña", { exact: true }).fill("Updated-disposable-password-2026")
-  await page.getByLabel("Confirmar contraseña").fill("Updated-disposable-password-2026")
+  await page
+    .getByLabel("Nueva contraseña", { exact: true })
+    .fill("Updated-disposable-password-2026")
+  await page
+    .getByLabel("Confirmar contraseña")
+    .fill("Updated-disposable-password-2026")
   await page.getByRole("button", { name: "Continuar" }).click()
-  await expect(page.getByRole("alert")).toContainText("no contiene un token válido")
-  expect(state.calls.filter(c => c.path === "/auth/password/reset")).toHaveLength(1)
-  expect(state.calls.some(c => c.path === "/auth/me" || c.path.startsWith("/admin/"))).toBeFalsy()
+  await expect(page.getByRole("alert")).toContainText(
+    "no contiene un token válido",
+  )
+  expect(
+    state.calls.filter((c) => c.path === "/auth/password/reset"),
+  ).toHaveLength(1)
+  expect(
+    state.calls.some(
+      (c) => c.path === "/auth/me" || c.path.startsWith("/admin/"),
+    ),
+  ).toBeFalsy()
 })
 const password = "Disposable-test-password-2026"
 const profile = {
@@ -449,6 +474,14 @@ async function setup(page: Page, mode = "normal", role = "admin") {
       )
     if (Object.keys(body).some((k) => !fields.includes(k)))
       return fail(422, "UNKNOWN_FIELD")
+    if (
+      [body.startsAt, body.endsAt].some(
+        (v) =>
+          v != null &&
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/.test(v),
+      )
+    )
+      return fail(422, "INVALID_DATE")
     const saved = { ...body, id: id || "9001" }
     state.docs[kind] =
       kind === "contact"
@@ -587,6 +620,33 @@ for (const kind of ["promotions", "pages", "banners", "social-links", "users"])
         put.headers["x-reauth-token"],
       )
   })
+test("banners have no schedule controls and clear an existing schedule on save", async ({
+  page,
+}) => {
+  const state = await setup(page)
+  state.docs.banners[0].startsAt = "2026-10-05T05:39:38Z"
+  state.docs.banners[0].endsAt = "2026-10-08T05:40:55Z"
+  await login(page)
+  await nav(page, "Contenido web")
+  await page.getByRole("button", { name: "Banners", exact: true }).click()
+  await page.getByRole("button", { name: "Editar / detalle" }).click()
+  const editor = page.locator(".module-editor")
+  await expect(editor.locator('input[type="datetime-local"]')).toHaveCount(0)
+  await editor.getByLabel("Estado", { exact: true }).selectOption("active")
+  await editor.getByRole("button", { name: "Guardar", exact: true }).click()
+  await expect(
+    page.getByText("Guardado correctamente", { exact: true }),
+  ).toBeVisible()
+  const put = state.calls.find(
+    (c) => c.path === "/admin/banners/8" && c.method === "PUT",
+  )
+  expect(put.body).toMatchObject({
+    startsAt: null,
+    endsAt: null,
+    status: "active",
+  })
+})
+
 test("contact singleton only PUT; closing a day sends null hours", async ({
   page,
 }) => {
@@ -900,7 +960,10 @@ test("forgot is generic, SMTP installation failure is explicit, reset strips fra
   )
   expect(
     state.calls.find((c) => c.path === "/auth/password/reset").body,
-  ).toEqual({ token: "disposable-reset", newPassword: "Updated-disposable-password-2026" })
+  ).toEqual({
+    token: "disposable-reset",
+    newPassword: "Updated-disposable-password-2026",
+  })
   expect(
     await page.evaluate(() => [
       Object.keys(localStorage),

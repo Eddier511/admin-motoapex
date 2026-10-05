@@ -23,6 +23,8 @@ Typecheck/build y Playwright/Edge con respuestas controladas, IDs de prueba y co
 
 La suite no conecta una cuenta real ni altera los datos del servidor. El frontend compilado no incluye mocks. GitHub Actions debe ejecutar esa misma suite y generar el ZIP; comprobar su resultado antes de instalar.
 
+Los banners no tienen controles de inicio ni fin: al crear o guardar se envían startsAt y endsAt como null. Guardar un banner existente elimina su programación anterior; su estado Activo/Inactivo controla la publicación. Las promociones conservan las fechas exigidas por su contrato y las envían con zona horaria y segundos, sin milisegundos.
+
 ## Pendiente en Hostinger, con datos desechables
 
 1. Confirmar migraciones 002–005 con el administrador del backend. No borrar/reimportar la base.

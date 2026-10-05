@@ -396,14 +396,16 @@ export function editable(fields: Field[], doc: Doc): Doc {
             ? editable(f.children!, v)
             : f.type === "array"
               ? (v || []).map((item: Doc) => editable(f.children!, item))
-              : (v ??
-                (f.nullable
-                  ? null
-                  : f.type === "boolean"
-                    ? false
-                    : f.type === "number"
-                      ? 0
-                      : "")),
+              : f.type === "date" && typeof v === "string"
+                ? v.replace(/\.\d{3}Z$/, "Z")
+                : (v ??
+                  (f.nullable
+                    ? null
+                    : f.type === "boolean"
+                      ? false
+                      : f.type === "number"
+                        ? 0
+                        : "")),
         ]
       }),
   )
