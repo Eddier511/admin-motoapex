@@ -2,7 +2,7 @@ import { errorMessage } from "../lib/api"
 
 import { useState } from "react"
 
-import { Bike, Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail } from "lucide-react"
 
 import { useApp } from "../context/AppContext"
 
@@ -59,23 +59,6 @@ export function Login() {
           }}
         />
         <div className="relative">
-          <div className="flex items-center gap-3 mb-16">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "var(--primary)" }}
-            >
-              <Bike size={20} className="text-black" />
-            </div>
-            <div>
-              <p
-                className="text-lg font-bold text-white"
-                style={{ fontFamily: "DM Sans, sans-serif" }}
-              >
-                MotoApex
-              </p>
-              <p className="text-xs text-zinc-500">Costa Rica</p>
-            </div>
-          </div>
           <h2
             className="text-4xl font-bold text-white mb-4 leading-tight"
             style={{ fontFamily: "DM Sans, sans-serif" }}
@@ -97,21 +80,12 @@ export function Login() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
         <div className="w-full max-w-sm">
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center"
-              style={{ background: "var(--primary)" }}
-            >
-              <Bike size={17} className="text-black" />
-            </div>
-            <p
-              className="font-bold text-zinc-100"
-              style={{ fontFamily: "DM Sans, sans-serif" }}
-            >
-              MotoApex Admin
-            </p>
+          <div className="flex items-center gap-4 mb-8">
+            <img src={`${import.meta.env.BASE_URL}motoapex-logo.png`} alt="MotoApex Costa Rica"
+              width={104} height={104} className="w-[104px] h-[104px] object-contain shrink-0" />
+            <p className="font-bold text-zinc-100">MotoApex Admin</p>
           </div>
 
           <h1

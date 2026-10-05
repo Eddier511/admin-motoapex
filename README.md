@@ -57,3 +57,14 @@ Comprobaciones locales: TypeScript, build y 13 pruebas de navegador sobre respue
 El endpoint temporal `/v1/health` devolvió **HTTP 403** durante esta integración. No se confirmó la instalación correcta ni CORS ni una sesión real. Pendiente en Hostinger: salud DB, login/me/logout reales, permisos DB modificados, lectura después de escrituras para confirmar persistencia, conflictos de slug/SKU, reservas/inventario distribuido, galerías y notas, acceso desde los orígenes temporales y definitivos. No se enviaron escrituras de prueba al servidor real.
 
 Las credenciales MySQL pertenecen exclusivamente al backend. El SQL inicial en `database/` es histórico: para instalar el backend sigue las migraciones y correcciones del PR #1 de api-motoapex; no reimportes el esquema inicial sobre una base existente.
+
+## Identidad visual
+
+El logo oficial completo está en `public/motoapex-logo.png`. Se muestra una vez en
+el inicio de sesión y una vez en el encabezado del panel con `object-contain`.
+Los iconos se generan desde esa imagen sin recortarla ni alterar sus proporciones:
+`python scripts/generate-brand-icons.py` (requiere Pillow).
+El ICO incluye 16, 32 y 48 px; el icono Apple mide 180 × 180 px.
+El título es MotoApex Admin y se conserva noindex/nofollow y robots.txt.
+En móvil el menú inicia colapsado, se expande sobre el contenido y se cierra
+al navegar. Los avisos dejan libre el encabezado y su botón para colapsar.

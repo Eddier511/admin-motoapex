@@ -49,7 +49,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [pageParams, setPageParams] = useState<Record<string, string>>({})
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.matchMedia("(max-width: 767px)").matches)
 
   const [user, setUser] = useState<User | null>(null)
 
@@ -74,6 +74,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCurrentPage(page)
 
       setPageParams(params)
+      if (window.matchMedia("(max-width: 767px)").matches) setSidebarCollapsed(true)
     },
     [],
   )

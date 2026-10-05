@@ -104,7 +104,7 @@ export function Dashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h2 className="text-xl font-bold text-zinc-100">
             Bienvenido, {user?.name}

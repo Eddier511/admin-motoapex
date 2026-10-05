@@ -28,11 +28,10 @@ export function Sidebar() {
     (!["motorcycles", "brands", "categories", "inventory"].includes(id) || canReadCatalog(user)) &&
     (id !== "leads" || can("leads.manage"))
   return (
-    <aside aria-label="Barra lateral" className="flex flex-col h-full border-r transition-all duration-300 shrink-0"
+    <aside aria-label="Barra lateral" data-collapsed={sidebarCollapsed} className="admin-sidebar flex flex-col h-full border-r transition-all duration-300 shrink-0"
       style={{ width: sidebarCollapsed ? 72 : 248, background: "var(--card)", borderColor: "var(--border)" }}>
       <div className="flex items-center gap-3 px-5 h-16 shrink-0 border-b" style={{ borderColor: "var(--border)" }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--primary)", color: "white" }}><Bike size={19} /></div>
-        {!sidebarCollapsed && <div><p className="text-sm font-bold">MotoApex</p><p className="text-xs text-zinc-500">Admin Panel</p></div>}
+        {!sidebarCollapsed && <p className="text-sm font-semibold text-zinc-500">Administración</p>}
       </div>
       <nav aria-label="Menú principal" className="sidebar-navigation flex-1 overflow-y-auto px-3 py-4">
         {groups.map(group => {

@@ -42,14 +42,14 @@ export function TopBar() {
 
   return (
     <header
-      className="flex items-center justify-between px-6 border-b shrink-0"
+      className="flex items-center justify-between px-3 sm:px-6 gap-2 border-b shrink-0"
       style={{
         height: "64px",
         background: "var(--card)",
         borderColor: "var(--border)",
       }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <div className="relative group">
           <button onClick={toggleSidebar} aria-label="Mostrar/ocultar barra lateral" aria-expanded={!sidebarCollapsed}
             aria-describedby="sidebar-toggle-tip" className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary">
@@ -59,15 +59,17 @@ export function TopBar() {
             Mostrar/ocultar barra lateral <kbd className="ml-2 rounded bg-white/20 px-1.5 py-0.5">Ctrl+Shift+S</kbd>
           </div>
         </div>
+        <img src={`${import.meta.env.BASE_URL}motoapex-logo.png`} alt="MotoApex Costa Rica" width={48} height={48}
+          className="w-12 h-12 object-contain shrink-0" />
         <h1
-          className="text-base font-semibold text-zinc-100"
+          className="hidden sm:block text-base font-semibold text-zinc-100 truncate"
           style={{ fontFamily: "DM Sans, sans-serif" }}
         >
           {pageTitles[currentPage] ?? ""}
         </h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
         {/* Search */}
         <div className="relative hidden md:block">
           <Search

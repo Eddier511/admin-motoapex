@@ -121,3 +121,13 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .sidebar-navigation::-webkit-scrollbar { width: 7px; }
 .sidebar-navigation::-webkit-scrollbar-thumb { background: #c4c4c8; border-radius: 6px; }
 .sidebar-navigation::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+@media (max-width: 767px) {
+  .admin-sidebar[data-collapsed="false"] {
+    position: fixed;
+    inset: 64px auto 0 0;
+    height: calc(100dvh - 64px);
+    z-index: 40;
+    box-shadow: 12px 0 24px #18181b18;
+  }
+}
