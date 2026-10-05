@@ -25,6 +25,8 @@ La suite no conecta una cuenta real ni altera los datos del servidor. El fronten
 
 Los banners no tienen controles de inicio ni fin: al crear o guardar se envían startsAt y endsAt como null. Guardar un banner existente elimina su programación anterior; su estado Activo/Inactivo controla la publicación. Las promociones conservan las fechas exigidas por su contrato y las envían con zona horaria y segundos, sin milisegundos.
 
+Páginas se retiró de la interfaz de Contenido web, que abre en Banners y conserva Contacto y horarios y Redes sociales. Los banners se guardan sin página relacionada (pageId null), sin consultar /admin/pages. Esta modificación de la interfaz no elimina registros existentes de la base de datos. La suite actual verifica la ausencia de Páginas y de esas consultas en lugar de su CRUD anterior.
+
 ## Pendiente en Hostinger, con datos desechables
 
 1. Confirmar migraciones 002–005 con el administrador del backend. No borrar/reimportar la base.

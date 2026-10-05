@@ -239,6 +239,7 @@ export function ResourceModule({ kind }: { kind: string }) {
               if (kind === "banners") {
                 body.startsAt = null
                 body.endsAt = null
+                body.pageId = null
               }
               if (kind === "users") {
                 if (!body.newPassword) delete body.newPassword
@@ -342,7 +343,7 @@ export function ResourceModule({ kind }: { kind: string }) {
   )
 }
 export function WebContentModule() {
-  const [tab, setTab] = useState("pages")
+  const [tab, setTab] = useState("banners")
   const { can } = useApp()
   if (!can("content.manage"))
     return <RemoteState error="No tienes permiso para contenido web." />
@@ -352,7 +353,7 @@ export function WebContentModule() {
         aria-label="Contenido web"
         className="flex flex-wrap gap-2 p-4 border-b"
       >
-        {["pages", "banners", "contact", "social-links"].map((kind) => (
+        {["banners", "contact", "social-links"].map((kind) => (
           <button
             key={kind}
             onClick={() => setTab(kind)}

@@ -176,14 +176,14 @@ async function fillFields(page: Page, fields: Field[], doc: Doc, prefix = "") {
   }
 }
 
-for (const kind of ["pages", "banners", "social-links"])
+for (const kind of ["banners", "social-links"])
   test(`${kind} creation uses returned server ID and safe full payload`, async ({
     page,
   }) => {
     const state = await setup(page)
     await login(page)
     await nav(page, "Contenido web")
-    if (kind !== "pages")
+    if (kind !== "banners")
       await page
         .getByRole("navigation", { name: "Contenido web" })
         .getByRole("button", { name: schemas[kind].title, exact: true })
@@ -203,7 +203,10 @@ for (const kind of ["pages", "banners", "social-links"])
       state.calls.find(
         (c) => c.path === `/admin/${kind}` && c.method === "POST",
       ).body,
-    ).toEqual(editable(schemas[kind].fields, documents[kind]))
+    ).toEqual({
+      ...editable(schemas[kind].fields, documents[kind]),
+      ...(kind === "banners" ? { pageId: null } : {}),
+    })
   })
 
 for (const status of [403, 409, 422, 429])
@@ -467,6 +470,7 @@ async function setup(page: Page, mode = "normal", role = "admin") {
     }
     const fields = schemas[kind].fields
       .map((f) => f.key)
+      .concat(kind === "banners" ? ["pageId"] : [])
       .concat(
         kind === "users"
           ? ["password", "newPassword", "mustChangePassword"]
@@ -573,7 +577,7 @@ test("invalid MFA consumes challenge and recovery code alternative works", async
     page.getByRole("heading", { name: "Dashboard", exact: true }),
   ).toBeVisible()
 })
-for (const kind of ["promotions", "pages", "banners", "social-links", "users"])
+for (const kind of ["promotions", "banners", "social-links", "users"])
   test(`${kind} full editable PUT, real IDs and logical delete`, async ({
     page,
   }) => {
@@ -587,7 +591,7 @@ for (const kind of ["promotions", "pages", "banners", "social-links", "users"])
           ? "Usuarios"
           : "Contenido web",
     )
-    if (!["promotions", "users", "pages"].includes(kind))
+    if (!["promotions", "users", "banners"].includes(kind))
       await page
         .getByRole("navigation", { name: "Contenido web" })
         .getByRole("button", { name: schemas[kind].title })
@@ -604,7 +608,10 @@ for (const kind of ["promotions", "pages", "banners", "social-links", "users"])
     const put = state.calls.find(
       (c) => c.path === `/admin/${kind}/8` && c.method === "PUT",
     )
-    expect(put.body).toEqual(editable(schemas[kind].fields, documents[kind]))
+    expect(put.body).toEqual({
+      ...editable(schemas[kind].fields, documents[kind]),
+      ...(kind === "banners" ? { pageId: null } : {}),
+    })
     expect(put.body.id).toBeUndefined()
     expect(put.body.createdAt).toBeUndefined()
     page.on("dialog", (d) => d.accept())
@@ -785,33 +792,27 @@ test("promotion validates prices and currency without writes and can POST valid 
     .poll(() => state.docs.promotions.some((d: any) => d.id === "9001"))
     .toBeTruthy()
 })
-test("structured pages render safe fields and reject raw HTML", async ({
+test("web content opens banners without pages or page-related requests", async ({
   page,
 }) => {
   const state = await setup(page)
   await login(page)
   await nav(page, "Contenido web")
+  await expect(
+    page.getByRole("heading", { name: "Banners", exact: true }),
+  ).toBeVisible()
+  await expect(
+    page
+      .getByRole("navigation", { name: "Contenido web" })
+      .getByRole("button", { name: "Páginas", exact: true }),
+  ).toHaveCount(0)
   await page.getByRole("button", { name: "Editar / detalle" }).click()
-  await page.getByLabel("Formato del contenido").selectOption("blocks")
-  await page.getByRole("button", { name: "Agregar contenido" }).click()
-  await page.getByLabel("Contenido 1 · Texto").fill("<script>alert(1)</script>")
-  await page
-    .locator(".module-editor")
-    .getByRole("button", { name: "Guardar", exact: true })
-    .click()
-  await expect(page.locator(".module-editor").getByRole("alert")).toContainText(
-    "sin HTML",
-  )
-  expect(state.calls.some((c) => c.method === "PUT")).toBeFalsy()
-  await page.getByLabel("Contenido 1 · Texto").fill("Safe paragraph")
-  await page
-    .locator(".module-editor")
-    .getByRole("button", { name: "Guardar", exact: true })
-    .click()
-  await expect
-    .poll(() => state.docs.pages[0].content)
-    .toEqual([{ type: "paragraph", text: "Safe paragraph" }])
+  await expect(
+    page.getByLabel("Página relacionada", { exact: true }),
+  ).toHaveCount(0)
+  expect(state.calls.some((c) => c.path.startsWith("/admin/pages"))).toBeFalsy()
 })
+
 test("settings whitelist and single use reauth; profile email and password changes return to login", async ({
   page,
 }) => {

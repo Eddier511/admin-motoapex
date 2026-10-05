@@ -260,13 +260,6 @@ export const schemas: Record<string, Schema> = {
       order,
       status,
       ...dates,
-      {
-        key: "pageId",
-        label: "Página relacionada",
-        type: "select",
-        reference: "pages",
-        nullable: true,
-      },
     ],
   },
   contact: {
