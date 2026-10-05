@@ -60,7 +60,9 @@ export function errorMessage(error: unknown): string {
   return [
     explanations[error.status],
     error.message,
-    error.requestId ? `Referencia: ${error.requestId}` : "",
+    error.requestId && !error.message.includes(error.requestId)
+      ? `Referencia: ${error.requestId}`
+      : "",
   ]
     .filter(Boolean)
     .join(" ")

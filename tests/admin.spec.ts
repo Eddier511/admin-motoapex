@@ -611,3 +611,18 @@ test("new brand POST and delete, pending modules never call undocumented endpoin
     ),
   ).toBeFalsy()
 })
+
+
+test('login 500 displays the server reference only once', async ({ page }) => {
+  await setup(page);
+  await page.route(BASE + '/auth/login', route => route.fulfill({
+    status: 500, contentType: 'application/json',
+    headers: {'X-Request-ID': 'login-request-reference'},
+    body: JSON.stringify({error: {code: 'INTERNAL_ERROR', message: 'Error interno. Referencia: login-request-reference'}}),
+  }));
+  await page.getByLabel('Correo electrónico').fill('admin@example.test');
+  await page.getByLabel('Contraseña', {exact: true}).fill('test-password-only');
+  await page.getByRole('button', {name: 'Ingresar', exact: true}).click();
+  await expect(page.getByRole('alert')).toHaveText('Error interno. Referencia: login-request-reference');
+  await expect(page.getByRole('heading', {name: 'Iniciar sesión'})).toBeVisible();
+});
