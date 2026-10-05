@@ -24,7 +24,7 @@ const input =
   "w-full px-3 py-2 text-sm rounded-lg border bg-secondary text-zinc-200"
 
 export function Categories() {
-  const { user, can, addToast } = useApp()
+  const { user, can, addToast, confirmAction } = useApp()
 
   const remote = useRemote(async (signal) => ({
     categories: await list("categories", signal),
@@ -75,7 +75,11 @@ export function Categories() {
     if (
       busy ||
       !canDelete(user, "categories.manage") ||
-      !confirm("¿Eliminar categoría? Las categorías en uso deben desactivarse.")
+      !(await confirmAction({
+        title: "¿Eliminar categoría?",
+        message:
+          "Las categorías en uso deben desactivarse. Confirma si deseas eliminar esta categoría.",
+      }))
     )
       return
 

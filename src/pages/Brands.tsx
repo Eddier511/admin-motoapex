@@ -17,7 +17,7 @@ import { useApp } from "../context/AppContext"
 import type { Brand } from "../types"
 
 export function Brands() {
-  const { addToast, can, user } = useApp()
+  const { addToast, can, user, confirmAction } = useApp()
 
   const remote = useRemote((signal) => list("brands", signal))
 
@@ -104,7 +104,11 @@ export function Brands() {
     if (
       busy ||
       !canDelete(user, "brands.manage") ||
-      !window.confirm("¿Eliminar marca? Las marcas en uso deben desactivarse.")
+      !(await confirmAction({
+        title: "¿Eliminar marca?",
+        message:
+          "Las marcas en uso deben desactivarse. Confirma si deseas eliminar esta marca.",
+      }))
     )
       return
 
@@ -296,14 +300,16 @@ export function Brands() {
                   </div>
                 </FormRow>
               </div>
-              {([
-                "logo",
-                "heroImageUrl",
-                "tileImageUrl",
-                "tagline",
-                "slogan",
-                "accentLight",
-              ] as const).map((key) => (
+              {(
+                [
+                  "logo",
+                  "heroImageUrl",
+                  "tileImageUrl",
+                  "tagline",
+                  "slogan",
+                  "accentLight",
+                ] as const
+              ).map((key) => (
                 <FormRow
                   key={key}
                   label={

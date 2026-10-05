@@ -19,6 +19,8 @@ OPTIONS /admin/users desde https://admin.motoapexcr.com devolvió 204, Access-Co
 
 ## Pruebas locales
 
+Las eliminaciones de marcas, categorías, motocicletas y módulos comparten una confirmación visual con fondo gris, foco de teclado contenido, Escape/cancelación y restauración del foco. Desactivar MFA usa esa misma confirmación antes de la reautenticación requerida. Cancelar no envía una escritura. Los toast de éxito solo aparecen tras respuesta exitosa; los errores del servidor conservan el registro y muestran el error. Se verifican móvil y escritorio. El dashboard ya no muestra el aviso obsoleto de promociones pendientes; explica cuando la API devuelve consultas vacías.
+
 Typecheck/build y Playwright/Edge con respuestas controladas, IDs de prueba y contraseñas desechables. Cubren catálogo/PUT permitido/precios/galerías/especificaciones/inventario, leads/notas/asignación, CRUD de promociones/páginas/banners/redes/usuarios, contacto singleton, settings whitelist, roles y errores. Seguridad: login normal, desafío MFA, cambio obligatorio y ambos en orden, desafío inválido, códigos de recuperación, perfil, contraseña, reautenticación con propósito y uso único, QR local, MFA alta/confirmación/rotación/desactivación, revocación, recuperación genérica, SMTP pendiente y fragmento de reset retirado. Escritorio y móvil sin desbordamiento.
 
 La suite no conecta una cuenta real ni altera los datos del servidor. El frontend compilado no incluye mocks. GitHub Actions debe ejecutar esa misma suite y generar el ZIP; comprobar su resultado antes de instalar.

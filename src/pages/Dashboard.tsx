@@ -106,9 +106,7 @@ export function Dashboard() {
     <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h2 className="text-xl font-bold text-zinc-100">
-            Bienvenido, {user?.name}
-          </h2>
+          <h2 className="text-xl font-bold">Bienvenido, {user?.name}</h2>
           <p className="text-sm text-zinc-500 mt-1">
             {new Intl.DateTimeFormat("es-CR", {
               dateStyle: "full",
@@ -153,7 +151,10 @@ export function Dashboard() {
           ))}
       </div>
       {leads && (
-        <div className="rounded-xl border p-5 bg-card">
+        <div
+          className="rounded-xl border p-5 bg-card"
+          style={{ borderColor: "var(--border)" }}
+        >
           <h3 className="text-sm font-semibold mb-4">Consultas recientes</h3>
           <p className="text-xs text-zinc-500 mb-4">
             Resumen de las últimas 200 consultas; no representa un histórico
@@ -172,14 +173,13 @@ export function Dashboard() {
             </button>
           ))}
           {!leads.length && (
-            <p className="text-sm text-zinc-500">Sin consultas.</p>
+            <p className="text-sm text-zinc-500">
+              Aún no hay consultas recientes. Las solicitudes recibidas desde la
+              web aparecerán aquí.
+            </p>
           )}
         </div>
       )}
-      <div className="rounded-xl border p-5 bg-card text-sm text-zinc-500">
-        Promociones, analítica de visitas e historial de actividad pendientes de
-        API.
-      </div>
     </div>
   )
 }

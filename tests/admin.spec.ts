@@ -176,7 +176,8 @@ async function setup(page: Page, role = "admin") {
       })
 
     if (path === "/auth/logout") return reply({ loggedOut: true })
-    if (path === "/admin/lead-assignees") return reply([{ id: "7", name: "Test Admin" }])
+    if (path === "/admin/lead-assignees")
+      return reply([{ id: "7", name: "Test Admin" }])
 
     const parts = path.split("/")
     const kind = parts[2] as "brands" | "categories" | "motorcycles" | "leads"
@@ -418,9 +419,12 @@ test("brand/category CRUD uses server IDs and preserves presentation fields", as
     .poll(() => state.categories.find((c) => c.id === "909")?.description)
     .toBe("Updated category")
 
-  page.on("dialog", (d) => d.accept())
   await page
     .getByRole("button", { name: "Eliminar Adventure", exact: true })
+    .click()
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Eliminar", exact: true })
     .click()
   await expect(
     page.getByRole("cell", { name: "Adventure", exact: true }),
@@ -571,7 +575,10 @@ test("create motorcycle, edit specs, then delete uses returned ID", async ({
     .filter({ hasText: "New Model" })
     .getByTitle("Eliminar", { exact: true })
     .click()
-  await page.getByRole("button", { name: "Eliminar", exact: true }).last().click()
+  await page
+    .getByRole("button", { name: "Eliminar", exact: true })
+    .last()
+    .click()
   await expect
     .poll(() => state.motorcycles.some((m) => m.id === "909"))
     .toBeFalsy()
@@ -588,9 +595,12 @@ test("new brand POST and delete; missing installed modules show errors without f
   await page.getByLabel("Slug", { exact: true }).fill("new-brand")
   await page.getByRole("button", { name: "Guardar", exact: true }).click()
   await expect.poll(() => state.brands.some((b) => b.id === "909")).toBeTruthy()
-  page.on("dialog", (d) => d.accept())
   await page
     .getByRole("button", { name: "Eliminar New Brand", exact: true })
+    .click()
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Eliminar", exact: true })
     .click()
   await expect.poll(() => state.brands.some((b) => b.id === "909")).toBeFalsy()
 
@@ -613,19 +623,28 @@ test("new brand POST and delete; missing installed modules show errors without f
   ).toBeTruthy()
 })
 
-
-test("grouped sidebar, hover tooltip and click collapse preserve navigation", async ({ page }) => {
+test("grouped sidebar, hover tooltip and click collapse preserve navigation", async ({
+  page,
+}) => {
   await setup(page)
   await login(page)
   const sidebar = page.getByRole("complementary", { name: "Barra lateral" })
   for (const label of ["General", "Gestión", "Operación", "Sistema"])
     await expect(sidebar.getByText(label, { exact: true })).toBeVisible()
-  const toggle = page.getByRole("button", { name: "Mostrar/ocultar barra lateral", exact: true })
+  const toggle = page.getByRole("button", {
+    name: "Mostrar/ocultar barra lateral",
+    exact: true,
+  })
   await expect(toggle).toHaveText("")
   await toggle.hover()
   await expect(page.getByRole("tooltip")).toHaveCSS("opacity", "1")
-  await expect(page.getByRole("tooltip")).toHaveText("Mostrar/ocultar barra lateral")
-  await expect(page.getByRole("tooltip")).toHaveCSS("background-color", "rgb(75, 85, 99)")
+  await expect(page.getByRole("tooltip")).toHaveText(
+    "Mostrar/ocultar barra lateral",
+  )
+  await expect(page.getByRole("tooltip")).toHaveCSS(
+    "background-color",
+    "rgb(75, 85, 99)",
+  )
   await page.mouse.move(900, 900)
   await expect(page.getByRole("tooltip")).toHaveCount(0)
   await toggle.hover()
@@ -633,17 +652,27 @@ test("grouped sidebar, hover tooltip and click collapse preserve navigation", as
   await expect(toggle).toHaveAttribute("aria-expanded", "false")
   await expect(sidebar).toHaveCSS("width", "72px")
   await nav(page, "Motocicletas")
-  await expect(page.locator('[data-status="available"]')).toHaveText("Disponible")
+  await expect(page.locator('[data-status="available"]')).toHaveText(
+    "Disponible",
+  )
   await toggle.click()
   await expect(page.getByRole("tooltip")).toHaveCount(0)
   await expect(toggle).toHaveAttribute("aria-expanded", "true")
   await expect(sidebar).toHaveCSS("width", "248px")
-  await expect(page.locator('nav [aria-current="page"]')).toHaveAttribute("aria-label", "Motocicletas")
+  await expect(page.locator('nav [aria-current="page"]')).toHaveAttribute(
+    "aria-label",
+    "Motocicletas",
+  )
   await page.mouse.move(900, 900)
-  await page.screenshot({ path: "test-results/admin-ui-catalog.png", fullPage: true })
+  await page.screenshot({
+    path: "test-results/admin-ui-catalog.png",
+    fullPage: true,
+  })
 })
 
-test("Sonner announces confirmed saves and errors; status boxes include colored dots", async ({ page }) => {
+test("Sonner announces confirmed saves and errors; status boxes include colored dots", async ({
+  page,
+}) => {
   const state = await setup(page)
   await login(page)
   await nav(page, "Motocicletas")
@@ -653,35 +682,63 @@ test("Sonner announces confirmed saves and errors; status boxes include colored 
   await expect(badge.locator('[aria-hidden="true"]')).toHaveCount(1)
   await editMoto(page)
   await page.getByRole("button", { name: "Guardar ficha", exact: true }).click()
-  await expect(page.locator('[data-sonner-toast][data-type="success"]').filter({ hasText: "Motocicleta guardada" })).toBeVisible()
+  await expect(
+    page
+      .locator('[data-sonner-toast][data-type="success"]')
+      .filter({ hasText: "Motocicleta guardada" }),
+  ).toBeVisible()
   state.error = { path: "/admin/motorcycles/303", status: 422 }
   await page.getByLabel("Modelo *").fill("Rejected change")
   await page.getByRole("button", { name: "Guardar ficha", exact: true }).click()
-  await expect(page.locator('[data-sonner-toast][data-type="error"]').filter({ hasText: "Controlled API error" })).toBeVisible()
+  await expect(
+    page
+      .locator('[data-sonner-toast][data-type="error"]')
+      .filter({ hasText: "Controlled API error" }),
+  ).toBeVisible()
   await expect(page.getByLabel("Modelo *")).toHaveValue("Rejected change")
-  await page.screenshot({ path: "test-results/admin-ui-toast.png", fullPage: true })
+  await page.screenshot({
+    path: "test-results/admin-ui-toast.png",
+    fullPage: true,
+  })
 })
 
-
-for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
-  test(`official branding and browser metadata at ${viewport.width}px`, async ({ page }) => {
+for (const viewport of [
+  { width: 1440, height: 1000 },
+  { width: 390, height: 844 },
+]) {
+  test(`official branding and browser metadata at ${viewport.width}px`, async ({
+    page,
+  }) => {
     await page.setViewportSize(viewport)
     await setup(page)
     await expect(page).toHaveTitle("MotoApex Admin")
-    await expect(page.getByText("MotoApex Costa Rica", { exact: true })).toBeVisible()
-    await expect(page.getByText("admin.motoapexcr.com", { exact: false })).toHaveCount(0)
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow")
+    await expect(
+      page.getByText("MotoApex Costa Rica", { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByText("admin.motoapexcr.com", { exact: false }),
+    ).toHaveCount(0)
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      "content",
+      "noindex, nofollow",
+    )
     const favicon = page.locator('link[rel="icon"]')
     await expect(favicon).toHaveAttribute("sizes", "16x16 32x32 48x48")
-    const icoResponse = await page.request.get(await favicon.getAttribute("href") || "")
+    const icoResponse = await page.request.get(
+      (await favicon.getAttribute("href")) || "",
+    )
     expect(icoResponse.ok()).toBeTruthy()
     const ico = await icoResponse.body()
     expect(ico.readUInt16LE(2)).toBe(1)
     expect(ico.readUInt16LE(4)).toBe(3)
-    expect([0, 1, 2].map(i => ico[6 + i * 16]).sort((a, b) => a - b)).toEqual([16, 32, 48])
+    expect([0, 1, 2].map((i) => ico[6 + i * 16]).sort((a, b) => a - b)).toEqual(
+      [16, 32, 48],
+    )
     const apple = page.locator('link[rel="apple-touch-icon"]')
     await expect(apple).toHaveAttribute("sizes", "180x180")
-    const pngResponse = await page.request.get(await apple.getAttribute("href") || "")
+    const pngResponse = await page.request.get(
+      (await apple.getAttribute("href")) || "",
+    )
     expect(pngResponse.ok()).toBeTruthy()
     const png = await pngResponse.body()
     expect(png.readUInt32BE(16)).toBe(180)
@@ -692,69 +749,199 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     await expect(logo).toHaveJSProperty("naturalWidth", 1254)
     let bounds = await logo.boundingBox()
     expect(bounds!.width / bounds!.height).toBeCloseTo(1)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
-    await page.screenshot({ path: `test-results/branding-login-${viewport.width}.png`, fullPage: true })
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBeTruthy()
+    await page.screenshot({
+      path: `test-results/branding-login-${viewport.width}.png`,
+      fullPage: true,
+    })
     await login(page)
-    await expect(page.getByRole("complementary", { name: "Barra lateral" }).getByAltText("MotoApex Costa Rica", { exact: true })).toBeVisible()
-    await expect(page.getByRole("banner").getByAltText("MotoApex Costa Rica", { exact: true })).toHaveCount(0)
+    await expect(
+      page
+        .getByRole("complementary", { name: "Barra lateral" })
+        .getByAltText("MotoApex Costa Rica", { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page
+        .getByRole("banner")
+        .getByAltText("MotoApex Costa Rica", { exact: true }),
+    ).toHaveCount(0)
     await expect(logo).toHaveCount(1)
     await expect(logo).toBeVisible()
     bounds = await logo.boundingBox()
     expect(bounds!.width / bounds!.height).toBeCloseTo(1)
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBeTruthy()
     if (viewport.width < 768) {
-      const toggle = page.getByRole("button", { name: "Mostrar/ocultar barra lateral", exact: true })
+      const toggle = page.getByRole("button", {
+        name: "Mostrar/ocultar barra lateral",
+        exact: true,
+      })
       await expect(toggle).toHaveAttribute("aria-expanded", "false")
       await toggle.click()
-      await expect(page.getByRole("navigation", { name: "Menú principal" }).getByText("Motocicletas", { exact: true })).toBeVisible()
+      await expect(
+        page
+          .getByRole("navigation", { name: "Menú principal" })
+          .getByText("Motocicletas", { exact: true }),
+      ).toBeVisible()
       await toggle.click()
     }
-    const closeToast = page.locator('[data-sonner-toast]').getByRole('button', { name: 'Close toast' })
+    const closeToast = page
+      .locator("[data-sonner-toast]")
+      .getByRole("button", { name: "Close toast" })
     if (await closeToast.count()) await closeToast.click()
-    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+    await expect(page.locator("[data-sonner-toast]")).toHaveCount(0)
     await page.mouse.move(viewport.width - 5, viewport.height - 5)
-    await page.screenshot({ path: `test-results/branding-dashboard-${viewport.width}.png`, fullPage: true })
+    await page.screenshot({
+      path: `test-results/branding-dashboard-${viewport.width}.png`,
+      fullPage: true,
+    })
   })
 }
 
-
 for (const width of [1440, 390]) {
-  test(`loading popup covers pending requests and clears on ${width === 390 ? "error" : "success"} at ${width}px`, async ({ page }) => {
+  test(`loading popup covers pending requests and clears on ${width === 390 ? "error" : "success"} at ${width}px`, async ({
+    page,
+  }) => {
     await page.setViewportSize({ width, height: 900 })
     const state = await setup(page)
     await login(page)
     let release!: () => void
-    const pending = new Promise<void>(resolve => { release = resolve })
+    const pending = new Promise<void>((resolve) => {
+      release = resolve
+    })
     let failLoad = width === 390
-    await page.route(BASE + "/admin/brands", async route => {
+    await page.route(BASE + "/admin/brands", async (route) => {
       await pending
       if (failLoad) {
-        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: { code: "TEST_ERROR", message: "Controlled API error" } }) })
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: { code: "TEST_ERROR", message: "Controlled API error" },
+          }),
+        })
       } else await route.fallback()
     })
     await nav(page, "Marcas")
     const popup = page.getByRole("dialog", { name: "Cargando experiencia" })
     try {
       await expect(popup).toBeVisible()
-      await expect(page.getByRole("progressbar", { name: "Carga en curso" })).toBeVisible()
-      await expect(page.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow")
+      await expect(
+        page.getByRole("progressbar", { name: "Carga en curso" }),
+      ).toBeVisible()
+      await expect(page.getByRole("progressbar")).not.toHaveAttribute(
+        "aria-valuenow",
+      )
       await expect(page.locator("#root")).toHaveJSProperty("inert", true)
       if (width === 390) {
         await page.emulateMedia({ reducedMotion: "reduce" })
-        await expect(page.locator(".loading-progress")).toHaveCSS("animation-name", "none")
+        await expect(page.locator(".loading-progress")).toHaveCSS(
+          "animation-name",
+          "none",
+        )
       }
-      await page.screenshot({ path: `test-results/loading-popup-${width}.png`, fullPage: true })
+      await page.screenshot({
+        path: `test-results/loading-popup-${width}.png`,
+        fullPage: true,
+      })
     } finally {
       release()
     }
     await expect(popup).toHaveCount(0)
     await expect(page.locator("#root")).toHaveJSProperty("inert", false)
     if (width === 390) {
-      await expect(page.getByRole("alert")).toContainText("Controlled API error")
+      await expect(page.getByRole("alert")).toContainText(
+        "Controlled API error",
+      )
       failLoad = false
       await page.getByRole("button", { name: "Reintentar" }).click()
     }
-    await expect(page.getByRole("heading", { name: "Marcas", exact: true })).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "Marcas", exact: true }),
+    ).toBeVisible()
     await expect(page.getByText("KTM", { exact: true })).toBeVisible()
   })
 }
+
+for (const width of [390, 1440])
+  test(`custom delete confirmation cancel, keyboard, error and success at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await setup(page)
+    page.on("dialog", () => {
+      throw new Error("Native confirmation must not open")
+    })
+    await login(page)
+    if (width === 390)
+      await page
+        .getByRole("button", {
+          name: "Mostrar/ocultar barra lateral",
+          exact: true,
+        })
+        .click()
+    await nav(page, "Marcas")
+    const trigger = page.getByRole("button", {
+      name: "Eliminar KTM",
+      exact: true,
+    })
+    await trigger.click()
+    const dialog = page.getByRole("alertdialog", { name: "¿Eliminar marca?" })
+    await expect(dialog).toBeVisible()
+    await expect(
+      dialog.getByRole("button", { name: "Cancelar", exact: true }),
+    ).toBeFocused()
+    expect(state.calls.some((c) => c.method === "DELETE")).toBeFalsy()
+    await page.keyboard.press("Escape")
+    await expect(dialog).toHaveCount(0)
+    await expect(trigger).toBeFocused()
+    await trigger.click()
+    await dialog.getByRole("button", { name: "Cancelar", exact: true }).click()
+    expect(state.calls.some((c) => c.method === "DELETE")).toBeFalsy()
+    await trigger.click()
+    await page.screenshot({
+      path: `test-results/delete-confirmation-${width}.png`,
+    })
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBeTruthy()
+    state.error = { path: "/admin/brands/101", status: 409 }
+    await dialog.getByRole("button", { name: "Eliminar", exact: true }).click()
+    await expect(
+      page.getByText("Marca eliminada", { exact: true }),
+    ).toHaveCount(0)
+    await expect
+      .poll(() => state.calls.filter((c) => c.method === "DELETE").length)
+      .toBe(1)
+    expect(state.brands).toHaveLength(1)
+    state.error = null
+    await trigger.click()
+    await dialog.getByRole("button", { name: "Eliminar", exact: true }).click()
+    await expect(
+      page.getByText("Marca eliminada", { exact: true }),
+    ).toBeVisible()
+    await expect.poll(() => state.brands.length).toBe(0)
+  })
+
+test("dashboard empty inquiries are clear and promotions are not marked pending", async ({
+  page,
+}) => {
+  const state = await setup(page)
+  state.leads = []
+  await login(page)
+  await expect(
+    page.getByText(
+      "Aún no hay consultas recientes. Las solicitudes recibidas desde la web aparecerán aquí.",
+    ),
+  ).toBeVisible()
+  await expect(page.getByText(/Promociones, analítica/)).toHaveCount(0)
+})

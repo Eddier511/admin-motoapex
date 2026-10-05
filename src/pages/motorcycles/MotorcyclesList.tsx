@@ -399,9 +399,15 @@ export function MotorcyclesList() {
                           disabled={busy || !can("motorcycles.publish")}
                           onClick={() => void togglePublish(moto.id)}
                           className="rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
-                          aria-label={moto.published ? "Despublicar motocicleta" : "Publicar motocicleta"}
+                          aria-label={
+                            moto.published
+                              ? "Despublicar motocicleta"
+                              : "Publicar motocicleta"
+                          }
                         >
-                          <Badge status={moto.published ? "published" : "draft"} />
+                          <Badge
+                            status={moto.published ? "published" : "draft"}
+                          />
                         </button>
                       </td>
                       <td className="p-4 text-center">
@@ -493,10 +499,11 @@ export function MotorcyclesList() {
 
       <ConfirmModal
         open={!!confirmDelete}
-        title="¿Archivar motocicleta?"
-        message="La motocicleta se moverá al archivo. Podrás restaurarla posteriormente."
+        title="¿Eliminar motocicleta?"
+        message="La motocicleta dejará de estar disponible en el catálogo. Confirma si deseas eliminarla."
         confirmLabel="Eliminar"
         danger
+        busy={busy}
         onConfirm={() => confirmDelete && handleDelete(confirmDelete)}
         onCancel={() => setConfirmDelete(null)}
       />

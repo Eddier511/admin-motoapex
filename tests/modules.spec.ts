@@ -636,8 +636,11 @@ for (const kind of ["promotions", "banners", "social-links", "users"])
     )
     expect(put.body.id).toBeUndefined()
     expect(put.body.createdAt).toBeUndefined()
-    page.on("dialog", (d) => d.accept())
     await page.getByRole("button", { name: "Eliminar", exact: true }).click()
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Eliminar", exact: true })
+      .click()
     if (kind === "users") await reauth(page)
     await expect.poll(() => state.docs[kind].length).toBe(0)
     const del = state.calls.find(
@@ -745,10 +748,13 @@ test("create user requires explicit password and purpose scoped reauth; LAST_ADM
     status: 409,
     code: "LAST_ADMIN",
   }
-  page.on("dialog", (d) => d.accept())
   await page
     .getByRole("button", { name: "Eliminar", exact: true })
     .first()
+    .click()
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Eliminar", exact: true })
     .click()
   await reauth(page)
   await expect(
@@ -1019,8 +1025,11 @@ test("MFA rotation and disable require factor and different fresh tokens", async
     .click()
   await reauth(page, true)
   await page.getByRole("button", { name: "Ya guardé mis códigos" }).click()
-  page.on("dialog", (d) => d.accept())
   await page
+    .getByRole("button", { name: "Desactivar MFA", exact: true })
+    .click()
+  await page
+    .getByRole("alertdialog")
     .getByRole("button", { name: "Desactivar MFA", exact: true })
     .click()
   await reauth(page, true)

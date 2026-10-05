@@ -119,8 +119,14 @@ export function SettingsModule() {
 }
 
 export function Account() {
-  const { sensitive, clearSession, updateUser, addToast, revealCodes } =
-    useApp()
+  const {
+    sensitive,
+    clearSession,
+    updateUser,
+    addToast,
+    revealCodes,
+    confirmAction,
+  } = useApp()
   const remote = useRemote(async (signal) => {
     const [profile, mfa] = await Promise.all([
       request<Doc>("/auth/profile", { signal }),
@@ -405,9 +411,14 @@ export function Account() {
             <button
               className="module-secondary text-red-600"
               disabled={busy}
-              onClick={() => {
+              onClick={async () => {
                 if (
-                  confirm("¿Desactivar MFA? Se revocarán todas las sesiones.")
+                  await confirmAction({
+                    title: "¿Desactivar MFA?",
+                    message:
+                      "Se revocarán todas las sesiones. Tendrás que iniciar sesión de nuevo.",
+                    confirmLabel: "Desactivar MFA",
+                  })
                 )
                   void perform(async () => {
                     await sensitive("mfa.manage", (t) =>

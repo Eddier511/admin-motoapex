@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from "react"
 
 import {
@@ -28,6 +29,10 @@ import { toast } from "sonner"
 
 import type { Page, Toast } from "../types"
 import { RecoveryCodes } from "../components/ui/RecoveryCodes"
+import {
+  Confirmation,
+  type ConfirmationOptions,
+} from "../components/ui/Confirmation"
 
 interface AppContextType {
   currentPage: Page
@@ -66,6 +71,7 @@ interface AppContextType {
     run: (token: string) => Promise<T>,
   ) => Promise<T>
   revealCodes: (codes: string[]) => void
+  confirmAction: (options: ConfirmationOptions) => Promise<boolean>
 }
 
 const AppContext = createContext<AppContextType | null>(null)
@@ -89,6 +95,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [expiresAt, setExpiresAt] = useState("")
   const [task, setTask] = useState<SensitiveTask | null>(null)
   const [codes, setCodes] = useState<string[]>([])
+  const [confirmation, setConfirmation] = useState<ConfirmationOptions | null>(
+    null,
+  )
+  const confirmationResolve = useRef<((value: boolean) => void) | null>(null)
+  const closeConfirmation = (accepted: boolean) => {
+    const resolve = confirmationResolve.current
+    confirmationResolve.current = null
+    setConfirmation(null)
+    resolve?.(accepted)
+  }
+  const confirmAction = (options: ConfirmationOptions): Promise<boolean> => {
+    if (confirmationResolve.current) return Promise.resolve(false)
+    return new Promise((resolve) => {
+      confirmationResolve.current = resolve
+      setConfirmation(options)
+    })
+  }
+  useEffect(() => {
+    if (!user) closeConfirmation(false)
+  }, [user])
+  useEffect(() => () => confirmationResolve.current?.(false), [])
   const clearSession = useCallback(() => {
     setToken(null)
     setUser(null)
@@ -168,7 +195,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const toggleSidebar = useCallback(() => setSidebarCollapsed((c) => !c), [])
 
   const acceptSession = useCallback(async (session: LoginResult) => {
-    if (!Number.isFinite(Date.parse(session.expiresAt)) || Date.parse(session.expiresAt) <= Date.now()) throw new Error("La autenticación venció. Inicia sesión de nuevo.");
+    if (
+      !Number.isFinite(Date.parse(session.expiresAt)) ||
+      Date.parse(session.expiresAt) <= Date.now()
+    )
+      throw new Error("La autenticación venció. Inicia sesión de nuevo.")
     if ("challenge" in session) {
       setChallenge(session)
       return
@@ -265,9 +296,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateUser: setUser,
         sensitive,
         revealCodes: setCodes,
+        confirmAction,
       }}
     >
       {children}
+      {confirmation && (
+        <Confirmation
+          {...confirmation}
+          onConfirm={() => closeConfirmation(true)}
+          onCancel={() => closeConfirmation(false)}
+        />
+      )}
       {task && <Reauthenticate task={task} close={() => setTask(null)} />}
       {!!codes.length && (
         <RecoveryCodes codes={codes} close={() => setCodes([])} />

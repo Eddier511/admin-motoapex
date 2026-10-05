@@ -15,7 +15,8 @@ import { promotionFields, promotionPayload } from "../lib/promotionEditor"
 
 export function ResourceModule({ kind }: { kind: string }) {
   const schema = schemas[kind]
-  const { can, addToast, sensitive, user, clearSession } = useApp()
+  const { can, addToast, sensitive, user, clearSession, confirmAction } =
+    useApp()
   const [form, setForm] = useState<Doc | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -109,9 +110,10 @@ export function ResourceModule({ kind }: { kind: string }) {
   async function destroy(item: Doc) {
     if (
       busy ||
-      !confirm(
-        `¿Eliminar ${item.title || item.name || item.label}? Se conservará el historial.`,
-      )
+      !(await confirmAction({
+        title: "¿Eliminar registro?",
+        message: `Vas a eliminar «${item.title || item.name || item.label}». Se conservará el historial.`,
+      }))
     )
       return
     setBusy(true)
