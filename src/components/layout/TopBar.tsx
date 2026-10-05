@@ -1,4 +1,11 @@
-import { Search, Bell, ChevronDown, LogOut, User, PanelLeft } from "lucide-react"
+import {
+  Search,
+  Bell,
+  ChevronDown,
+  LogOut,
+  User,
+  PanelLeft,
+} from "lucide-react"
 
 import { useState } from "react"
 
@@ -20,10 +27,19 @@ const pageTitles: Record<string, string> = {
   leads: "Leads",
   users: "Usuarios",
   settings: "Configuración",
+  account: "Mi cuenta",
 }
 
 export function TopBar() {
-  const { currentPage, logout, user, loggingOut, sidebarCollapsed, toggleSidebar } = useApp()
+  const {
+    currentPage,
+    logout,
+    user,
+    loggingOut,
+    sidebarCollapsed,
+    toggleSidebar,
+    navigate,
+  } = useApp()
 
   const [profileOpen, setProfileOpen] = useState(false)
 
@@ -41,16 +57,35 @@ export function TopBar() {
       }}
     >
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-        <div className="relative" onMouseEnter={() => setSidebarTipOpen(true)} onMouseLeave={() => setSidebarTipOpen(false)}>
-          <button onClick={() => { toggleSidebar(); setSidebarTipOpen(false) }} aria-label="Mostrar/ocultar barra lateral" aria-expanded={!sidebarCollapsed}
-            onFocus={event => { if (event.currentTarget.matches(":focus-visible")) setSidebarTipOpen(true) }}
+        <div
+          className="relative"
+          onMouseEnter={() => setSidebarTipOpen(true)}
+          onMouseLeave={() => setSidebarTipOpen(false)}
+        >
+          <button
+            onClick={() => {
+              toggleSidebar()
+              setSidebarTipOpen(false)
+            }}
+            aria-label="Mostrar/ocultar barra lateral"
+            aria-expanded={!sidebarCollapsed}
+            onFocus={(event) => {
+              if (event.currentTarget.matches(":focus-visible"))
+                setSidebarTipOpen(true)
+            }}
             onBlur={() => setSidebarTipOpen(false)}
-            aria-describedby="sidebar-toggle-tip" className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary">
+            aria-describedby="sidebar-toggle-tip"
+            className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary"
+          >
             <PanelLeft size={21} />
           </button>
-          <div id="sidebar-toggle-tip" role="tooltip" aria-hidden={!sidebarTipOpen}
+          <div
+            id="sidebar-toggle-tip"
+            role="tooltip"
+            aria-hidden={!sidebarTipOpen}
             className={`absolute left-0 top-12 z-50 whitespace-nowrap rounded-lg px-3 py-2 text-xs shadow-lg pointer-events-none transition-opacity ${sidebarTipOpen ? "visible opacity-100" : "invisible opacity-0"}`}
-            style={{ color: "white", background: "#4b5563" }}>
+            style={{ color: "white", background: "#4b5563" }}
+          >
             Mostrar/ocultar barra lateral
           </div>
         </div>
@@ -161,11 +196,14 @@ export function TopBar() {
                 <p className="text-xs text-zinc-500">{user?.email}</p>
               </div>
               <button
-                disabled
+                onClick={() => {
+                  navigate("account")
+                  setProfileOpen(false)
+                }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 transition-colors"
               >
                 <User size={14} />
-                Perfil (pendiente)
+                Mi cuenta
               </button>
               <button
                 onClick={() => void logout()}

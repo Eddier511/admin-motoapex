@@ -1,10 +1,16 @@
 # MotoApex Admin
 
-React + Vite + Tailwind. Conectado al contrato de `Eddier511/api-motoapex`, rama `codex/api-foundation`, `docs/contract.md` (PR #1, abierto al implementar). No depende de que la API esté en main. No hay datos simulados ni fallback a mocks.
+React 19/Vite 8/Tailwind 4 con operaciones reales de API. Conserva identidad, menú, Sonner, estados y LoadingOverlay. Sin mocks ni fallback en producción.
 
-## Configuración y desarrollo
+## Contrato y ramas
 
-Node.js 22.12+ y pnpm 10.34.3. Copia `.env.example` como `.env.local` para desarrollo; no agregues secretos. El build usa `.env.production`:
+Fuente: [contract.md](https://github.com/Eddier511/api-motoapex/blob/codex/accounts-security/docs/contract.md) y [accounts-install.md](https://github.com/Eddier511/api-motoapex/blob/codex/accounts-security/docs/accounts-install.md), rama codex/accounts-security, commit fb73f39920e0b7d91fdcca53aa1569968be4338f.
+
+Los PR API siguen abiertos y apilados: #1 base → #2 promociones → #3 contenido → #4 cuentas y seguridad. No se presupone que estén en main. Admin parte de main 902cd6a; su PR #2 de referencias seguía abierto. Este cambio evita también duplicar referencias, sin hacer merge de ese PR.
+
+## Desarrollo
+
+Node 22.12+, pnpm 10.34.3. Las variables VITE son públicas: nunca incluir MySQL, SMTP ni secretos. El build usa .env.production:
 
 ```env
 VITE_API_BASE_URL=https://darksalmon-quetzal-730302.hostingersite.com/v1
@@ -17,58 +23,43 @@ pnpm typecheck
 pnpm build
 pnpm exec playwright install chromium
 pnpm test
-pnpm preview
 ```
 
-En Windows con Edge instalado puedes ejecutar las pruebas con `PLAYWRIGHT_CHANNEL=msedge`. Las pruebas de navegador interceptan respuestas de contrato exclusivamente en tests; la aplicación distribuida siempre usa la API configurada.
+En Windows con Edge usar PLAYWRIGHT_CHANNEL=msedge. pnpm preview sirve el build. Las pruebas usan respuestas de contrato controladas exclusivamente en tests, con datos desechables aislados; no modifican Hostinger.
+
+## Funciones
+
+- Catálogo: marcas, categorías, motos, precios CRC/USD, publicación, especificaciones, inventario total y galerías HTTPS por color. Publicar requiere motorcycles.publish. PUT conserva todos los campos editables y excluye ID, fechas, nombres calculados y campos desconocidos de GET. Colores/fotos nuevos usan UUID según contrato; se conservan IDs del servidor después del guardado.
+- Leads: estado, notas agregadas al historial y responsables mediante GET /admin/lead-assignees; exclusivamente ID/nombre. Vacío desasigna. Ventas no consulta usuarios completos.
+- Promociones: listado, detalle, POST/PUT y eliminación lógica; marca, relaciones de motos/precios/moneda, imágenes, vigencia, flags, orden y botón. Valida promo ≤ original y moneda/marca de la moto. No importa ofertas de ejemplo.
+- Contenido: CRUD de páginas/banners/redes; contacto singleton solo GET/PUT. Texto plano o bloques estructurados, SEO, botones, imágenes escritorio/móvil, ALT, relaciones y vigencia. Nunca renderiza HTML de la API.
+- Usuarios: CRUD, roles/permisos solo de referencia, contraseña inicial explícita de 16–72 bytes y cambio obligatorio. Edición puede imponer cambio obligatorio o nueva contraseña; nunca envía mustChangePassword:false. LAST_ADMIN explica la protección sin eludirla.
+- Configuración: únicamente site_url, admin_url, api_url, timezone y default_currency. URL informativas, no reconfiguran CORS ni el endpoint del build. Contacto/horarios/logos/redes pertenecen a Contenido web.
+- Mi cuenta: perfil, contraseña, estado/alta/confirmación/desactivación MFA y rotación de códigos. Disponible para todos los roles autenticados desde el menú y perfil.
+- Login normal o desafíos mfa_login/password_change; sin acceso al panel hasta completarlos. Cuando exige ambos, MFA precede a contraseña. Desafío inválido obliga a reiniciar login. Usa expiresAt y /auth/me.
+- Recuperación genérica y /reset-password#token=...: elimina fragmento antes de montar React, token solo en memoria. Recargar pierde el token; abrir el enlace de nuevo o solicitar otro. Reset no crea sesión. SMTP pendiente se informa sin simular envío.
+- Operaciones sensibles: contraseña actual y MFA/recuperación cuando corresponde; POST /auth/reauth y X-Reauth-Token junto a Bearer para una sola escritura del propósito exacto. Cada intento nuevo pide reautenticación. Cambios que revocan sesiones vuelven al login.
+
+Bearer, desafíos, reautenticación, reset, URI MFA y recoveryCodes viven únicamente en memoria. No se guardan en localStorage/sessionStorage, logs ni URL (excepto el fragmento recibido y eliminado inmediatamente). QR generado localmente con qrcode, sin proveedor externo. Códigos se muestran solo cuando el servidor los entrega y se descartan al cerrar.
+
+## Permisos y errores
+
+La UI aplica roles/permisos iniciales del contrato. /auth/me actualmente no devuelve grants DB; el servidor consulta role_permissions y su 403 es definitivo. Si la identidad trae permisos explícitos, restringen también la UI. Admin gestiona usuarios/ajustes; admin/marketing promociones; admin/marketing/editor contenido; admin/sales leads. Catálogo conserva sus restricciones. No hay edición de permisos.
+
+Carga real, vacíos, validaciones, reintentos y avisos de éxito únicamente tras respuesta exitosa. Maneja 401 (descarta sesión), 403, 409/LAST_ADMIN, 422, 429/Retry-After y 503/SMTP o MFA pendientes. Muestra X-Request-ID sin duplicarlo. No reintenta escrituras automáticamente.
 
 ## Hostinger
 
-Sube y extrae el ZIP compilado en la raíz del sitio del admin, normalmente `public_html`. `index.html`, `.htaccess`, `robots.txt` y `assets/` deben quedar directamente ahí. Activa HTTPS. No se ejecuta Node.js en el hosting para servir estos archivos estáticos. GitHub Actions comprueba tipos, build y flujos de navegador antes de generar un ZIP descargable; no despliega ni hace merge.
+1. Respaldo y revisión de schema_migrations en la API. Aplicar en orden solo las pendientes: 002_api_support.sql, 003_promotions.sql, 004_web_content.sql y 005_accounts.sql. **No reimportar schema.sql.** La 005 revoca sesiones anteriores.
+2. Usar paquete API que incluya los cuatro PR. PHP 8.3+, PDO MySQL, Sodium y SMTP/cifrado según accounts-install.md. Configuración privada fuera de public_html, jamás en frontend. password_reset_url debe apuntar al HTTPS exacto del admin terminado en /reset-password.
+3. CORS: origen exacto del admin, Authorization y X-Reauth-Token; exponer X-Request-ID/Retry-After.
+4. Extraer ZIP del admin en su public_html: index.html, .htaccess, robots.txt y assets/ directamente en la raíz. .htaccess conserva navegación directa a /reset-password. No requiere Node en hosting.
+5. Completar [verificación real pendiente](docs/integration-verification.md) con una cuenta desechable. Este PR no hace merge ni despliegue automático; CI comprueba y empaqueta.
 
-API temporal: `https://darksalmon-quetzal-730302.hostingersite.com/v1`. Después cambiaremos **VITE_API_BASE_URL a `https://api.motoapexcr.com/v1` y recompilaremos**. La variable se incorpora durante el build: cambiar un archivo .env en el hosting no modifica un ZIP ya compilado. Configura en el backend CORS con los orígenes HTTPS exactos del admin temporal/definitivo.
+**Después cambiaremos VITE_API_BASE_URL a https://api.motoapexcr.com/v1 y recompilaremos.** Cambiar .env en hosting no modifica un ZIP construido. Actualizar también CORS y password_reset_url privados.
 
-## Funciones implementadas
+## Identidad y límites
 
-Login mediante `/auth/login`, validación de identidad con `/auth/me`, revocación con `/auth/logout`. Campos de acceso inicialmente vacíos. Bearer en memoria únicamente; recargar requiere login. Cualquier 401 privado elimina el token y vuelve al login. Si logout falla, se descarta la sesión local y se indica que no se pudo confirmar su revocación.
+Logo completo en login y encabezado izquierdo; src/assets/motoapex-logo.png importado por Vite. Favicon 16/32/48 y Apple 180. Binarios normales en Git. Título MotoApex Admin y noindex/nofollow/robots.txt. scripts/generate-brand-icons.py requiere Pillow.
 
-Marcas y categorías: listado, creación, edición y eliminación según rol. Marcas conservan logo, colores, hero, tile, tagline y slogan; categorías usan el ID real de marca o vacío para una categoría general. Marcas/categorías en uso se desactivan: la API rechaza borrarlas con 409.
-
-Motos: listado y filtros, detalle, creación, edición, eliminación y publicación. Cada PUT envía la ficha privada completa conservando todos sus campos; incluye moneda CRC/USD, precio promocional nullable, flags, especificaciones `{group,label,value}`, colores y sus galerías. El guardado toma los IDs reales de la respuesta, incluidos los de colores/fotos. Solo los nuevos colores/fotos tienen un UUID provisional según el contrato; se reemplaza por los IDs recibidos.
-
-Imágenes por enlaces HTTPS, sin carga de archivos ni blob URLs. Hasta 30 colores, 30 fotos por color y 100 especificaciones según API v1. Etiqueta, ALT, orden y una foto principal por color. Texto del servidor se renderiza como texto React, nunca HTML crudo.
-
-Inventario: total por moto mediante PUT de ficha completa. No inventa endpoints de existencias por color, reservas o movimientos. Si el backend detecta inventario distribuido o reservas incompatibles, muestra su error sin afirmar guardado.
-
-Leads: últimas 200 consultas, estado, asignación por ID real de usuario activo admin/sales (vacío desasigna), historial y agregado de notas mediante PATCH. No hay endpoint de listado de usuarios: el responsable se ingresa por ID y la API lo valida. Las notas enviadas son nuevas notas, no reemplazan el historial.
-
-Cargas, reintentos, errores de conexión/timeout, estados vacíos y validación. Las confirmaciones se muestran después de respuesta exitosa. 403 indica autorización; 409 conflicto; 422 datos inválidos; 429 espera/Retry-After si CORS lo expone. X-Request-ID se muestra si está disponible. No hay reintentos automáticos de escrituras.
-
-## Autorización y pendientes
-
-La API actual devuelve el rol, pero no los permisos DB en `/auth/me`. La UI aplica los roles documentados y los permisos iniciales: admin/editor editan catálogo, marketing consulta y admin/sales gestionan leads. Solo admin elimina. Publicar o retirar publicación requiere `motorcycles.publish`; la UI lo limita a admin. La autoridad final es el backend, que consulta role_permissions y puede devolver 403 aunque el rol muestre una acción. Si después la API expone grants explícitos, la UI también los restringe. No se inventa una consulta de permisos.
-
-Pendientes de API: promociones, contenido web, usuarios, MFA, recuperación de contraseña, analítica completa, notificaciones, movimientos de inventario y multimedia hero/card/mobile/videos/SEO aparte del slug. Sus pantallas muestran que están pendientes y no anuncian guardados ficticios. Dashboard calcula cantidades de las respuestas disponibles según rol; el resumen de leads usa solo las últimas 200 consultas.
-
-## Verificación y pruebas reales pendientes
-
-Comprobaciones locales: TypeScript, build y 13 pruebas de navegador sobre respuestas controladas del contrato. Cubren autenticación/401, token solo en memoria, roles, CRUD, preservación de PUT, IDs devueltos, galerías HTTPS, inventario, notas acumulativas y errores 403/409/422/429, estados vacíos y fallo de red. Son pruebas del frontend, no de la persistencia MySQL del backend.
-
-El endpoint temporal `/v1/health` devolvió **HTTP 403** durante esta integración. No se confirmó la instalación correcta ni CORS ni una sesión real. Pendiente en Hostinger: salud DB, login/me/logout reales, permisos DB modificados, lectura después de escrituras para confirmar persistencia, conflictos de slug/SKU, reservas/inventario distribuido, galerías y notas, acceso desde los orígenes temporales y definitivos. No se enviaron escrituras de prueba al servidor real.
-
-Las credenciales MySQL pertenecen exclusivamente al backend. El SQL inicial en `database/` es histórico: para instalar el backend sigue las migraciones y correcciones del PR #1 de api-motoapex; no reimportes el esquema inicial sobre una base existente.
-
-## Identidad visual
-
-El logo oficial completo está en `src/assets/motoapex-logo.png`, importado por Vite
-para incluirlo en el compilado con nombre versionado. Se muestra una vez a la
-izquierda en el encabezado del menú y una vez en la tarjeta centrada de login,
-sin recortes ni cambios de proporciones. El pie de login dice MotoApex Costa Rica.
-`public/favicon.ico` es el ICO oficial suministrado, con 16, 32 y 48 px.
-`python scripts/generate-brand-icons.py` (Pillow) genera el icono Apple de 180 px
-desde el logo y valida el ICO sin modificarlo.
-Estos tres archivos se guardan como binarios normales en Git para evitar que
-clones o empaquetadores sin Git LFS sirvan archivos de referencia en su lugar.
-El título es MotoApex Admin y se conserva noindex/nofollow y robots.txt.
-En móvil el menú inicia colapsado, se expande sobre el contenido y se cierra
-al navegar. Los avisos dejan libre el encabezado y su botón para colapsar.
+Analítica completa, notificaciones y movimientos de inventario siguen pendientes: el contrato no ofrece rutas. No hay uploads ni edición de permisos. Las pruebas locales no acreditan entrega de correo, cifrado real ni persistencia MySQL; consultar la guía de verificación.

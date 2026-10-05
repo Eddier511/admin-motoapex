@@ -8,6 +8,10 @@ const defaults: Record<User["role"], string[]> = {
     "brands.manage",
     "categories.manage",
     "leads.manage",
+    "promotions.manage",
+    "content.manage",
+    "users.manage",
+    "settings.manage",
   ],
 
   editor: [
@@ -15,9 +19,10 @@ const defaults: Record<User["role"], string[]> = {
     "motorcycles.write",
     "brands.manage",
     "categories.manage",
+    "content.manage",
   ],
 
-  marketing: ["motorcycles.read"],
+  marketing: ["motorcycles.read", "promotions.manage", "content.manage"],
 
   sales: ["leads.manage"],
 }

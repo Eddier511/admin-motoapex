@@ -176,6 +176,7 @@ async function setup(page: Page, role = "admin") {
       })
 
     if (path === "/auth/logout") return reply({ loggedOut: true })
+    if (path === "/admin/lead-assignees") return reply([{ id: "7", name: "Test Admin" }])
 
     const parts = path.split("/")
     const kind = parts[2] as "brands" | "categories" | "motorcycles" | "leads"
@@ -317,6 +318,9 @@ test("full PUT preserves publication, prices, currency, specs, galleries and ser
   const put = state.calls.find(
     (c) => c.method === "PUT" && c.path === "/admin/motorcycles/303",
   )!
+  expect(put.body).not.toHaveProperty("futureField")
+  expect(put.body).not.toHaveProperty("createdAt")
+  expect(put.body).not.toHaveProperty("brand")
 
   expect(put.body).toMatchObject({
     model: "390 Duke Updated",
@@ -326,7 +330,6 @@ test("full PUT preserves publication, prices, currency, specs, galleries and ser
     published: true,
     inventory: 5,
     specs: motorcycle.specs,
-    futureField: { keep: true },
   })
   expect(put.body.colors[0].images[0].url).toBe(
     motorcycle.colors[0].images[0].url,
@@ -444,7 +447,7 @@ test("lead notes append and assignment is a user ID; sales cannot access catalog
   await expect(page.getByText("Second note", { exact: true })).toBeVisible()
   expect(state.leads[0].notes).toHaveLength(2)
 
-  await page.getByLabel("ID del responsable").fill("7")
+  await page.getByLabel("Responsable", { exact: true }).selectOption("7")
   await page
     .getByRole("button", { name: "Guardar asignación", exact: true })
     .click()
@@ -574,7 +577,7 @@ test("create motorcycle, edit specs, then delete uses returned ID", async ({
     .toBeFalsy()
 })
 
-test("new brand POST and delete, pending modules never call undocumented endpoints", async ({
+test("new brand POST and delete; missing installed modules show errors without fallback", async ({
   page,
 }) => {
   const state = await setup(page)
@@ -599,9 +602,7 @@ test("new brand POST and delete, pending modules never call undocumented endpoin
   ]) {
     await nav(page, name)
     await expect(
-      page.getByText("Pendiente: la API v1 todavía no ofrece esta función.", {
-        exact: true,
-      }),
+      page.getByRole("button", { name: "Reintentar", exact: true }),
     ).toBeVisible()
   }
 
@@ -609,7 +610,7 @@ test("new brand POST and delete, pending modules never call undocumented endpoin
     state.calls.some((c) =>
       /^\/admin\/(promotions|content|users|settings)/.test(c.path),
     ),
-  ).toBeFalsy()
+  ).toBeTruthy()
 })
 
 

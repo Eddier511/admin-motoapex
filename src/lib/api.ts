@@ -59,8 +59,19 @@ export function errorMessage(error: unknown): string {
 
   return [
     explanations[error.status],
+    error.code === "SMTP_NOT_CONFIGURED"
+      ? "Instalación pendiente: configura SMTP en la API para enviar recuperación de contraseña."
+      : "",
+    error.code === "MFA_NOT_CONFIGURED"
+      ? "Instalación pendiente: configura Sodium y la clave de cifrado MFA en la API."
+      : "",
     error.message,
-    error.requestId ? `Referencia: ${error.requestId}` : "",
+    error.code === "LAST_ADMIN"
+      ? "Debes conservar al menos un administrador activo. No se puede realizar este cambio."
+      : "",
+    error.requestId && !error.message.includes(error.requestId)
+      ? `Referencia: ${error.requestId}`
+      : "",
   ]
     .filter(Boolean)
     .join(" ")
@@ -156,23 +167,26 @@ export type Resources = {
 export const list = <K extends Kind>(kind: K, signal?: AbortSignal) =>
   request<Resources[K][]>(`/admin/${kind}`, { signal })
 
-export const detail = <K extends Kind,>(
+export const detail = <K extends Kind>(
   kind: K,
   id: string,
   signal?: AbortSignal,
 ) =>
   request<Resources[K]>(`/admin/${kind}/${encodeURIComponent(id)}`, { signal })
 
-// Preserve the entire private document: PUT is replacement, never a partial update.
+// Preserve every editable field for replacement PUT; exclude GET-only metadata.
 
-export const save = <K extends Kind,>(
+export const save = <K extends Kind>(
   kind: K,
   document: Partial<Resources[K]>,
   id?: string,
 ) =>
   request<Resources[K]>(
     `/admin/${kind}${id ? "/" + encodeURIComponent(id) : ""}`,
-    { method: id ? "PUT" : "POST", body: JSON.stringify(document) },
+    {
+      method: id ? "PUT" : "POST",
+      body: JSON.stringify(editableCatalog(kind, document)),
+    },
   )
 
 export const remove = (kind: Kind, id: string) =>
@@ -189,7 +203,7 @@ export const patchLead = (
 
 export const auth = {
   login: (email: string, password: string) =>
-    request<{ token: string; expiresAt: string; user: User }>("/auth/login", {
+    request<LoginResult>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
@@ -197,4 +211,48 @@ export const auth = {
   me: () => request<User>("/auth/me"),
 
   logout: () => request("/auth/logout", { method: "POST", body: "{}" }),
+}
+
+export type LoginResult =
+  | { token: string; expiresAt: string; user: User }
+  | {
+      challenge: "mfa_login" | "password_change"
+      challengeToken: string
+      expiresAt: string
+    }
+export const post = <T>(path: string, body: unknown, reauthToken?: string) =>
+  request<T>(path, {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: reauthToken ? { "X-Reauth-Token": reauthToken } : {},
+  })
+const catalogKeys = {
+  brands:
+    "name slug description status order primaryColor secondaryColor accentLight logo heroImageUrl tileImageUrl tagline slogan",
+  categories: "name slug description status order brandId",
+  motorcycles:
+    "slug brandId categoryId model year price currency published showPrice allowQuote version sku tagline shortDescription description displacement inventory hp promoPrice status featured isNew specs colors",
+}
+export function editableCatalog(kind: Kind, document: object) {
+  const result = Object.fromEntries(
+    Object.entries(document).filter(([key]) =>
+      catalogKeys[kind].split(" ").includes(key),
+    ),
+  )
+  if (kind === "motorcycles") {
+    const pick = (item: object, keys: string) =>
+      Object.fromEntries(
+        Object.entries(item).filter(([key]) => keys.split(" ").includes(key)),
+      )
+    if (Array.isArray(result.specs))
+      result.specs = result.specs.map((s) => pick(s, "group label value"))
+    if (Array.isArray(result.colors))
+      result.colors = result.colors.map((c) => ({
+        ...pick(c, "id name hex status available order"),
+        images: (c.images || []).map((i: object) =>
+          pick(i, "id url alt label order isPrimary"),
+        ),
+      }))
+  }
+  return result
 }

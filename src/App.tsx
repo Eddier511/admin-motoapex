@@ -11,6 +11,8 @@ import { TopBar } from "./components/layout/TopBar"
 import { ToastContainer } from "./components/ui/Toast"
 
 import { Login } from "./pages/Login"
+import { AccessFlow, isResetRoute } from "./pages/AccessFlow"
+import { Account } from "./pages/Account"
 
 import { Dashboard } from "./pages/Dashboard"
 
@@ -33,6 +35,7 @@ import {
 
 function AppShell() {
   const { isAuthenticated, currentPage, user, can, pageParams } = useApp()
+  if (isResetRoute()) return <AccessFlow mode="reset" />
 
   if (!isAuthenticated)
     return (
@@ -59,6 +62,14 @@ function AppShell() {
 
   if (currentPage === "leads" && !can("leads.manage"))
     return <RemoteState error="No tienes acceso a leads con este rol." />
+  const modulePermission = {
+    promotions: "promotions.manage",
+    content: "content.manage",
+    users: "users.manage",
+    settings: "settings.manage",
+  }[currentPage as "promotions" | "content" | "users" | "settings"]
+  if (modulePermission && !can(modulePermission))
+    return <RemoteState error="No tienes permiso para este módulo." />
 
   const pageMap: Record<string, React.ReactNode> = {
     dashboard: <Dashboard />,
@@ -82,6 +93,7 @@ function AppShell() {
     users: <Users />,
 
     settings: <Settings />,
+    account: <Account />,
   }
 
   return (
