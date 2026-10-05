@@ -131,3 +131,59 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     box-shadow: 12px 0 24px #18181b18;
   }
 }
+
+/* Login: una tarjeta sobre un fondo claro con franjas decorativas. */
+.login-screen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #ffffff 0%, #fafafb 75%);
+}
+.login-stripes {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.login-stripes::before,
+.login-stripes::after {
+  content: "";
+  position: absolute;
+  width: 210px;
+  height: 460px;
+  transform: skewX(-28deg);
+  background: linear-gradient(90deg, #f6eee8 0 38%, transparent 38% 60%, #eeeff3 60% 98%, transparent 98%);
+  opacity: 0.6;
+}
+.login-stripes::before { top: -130px; left: 20px; }
+.login-stripes::after { bottom: -130px; right: 20px; transform: skewX(-28deg) rotate(180deg); }
+.login-card {
+  background: #ffffffed;
+  border: 1px solid #ffffff;
+  box-shadow: 0 22px 70px #20263b0b;
+}
+.login-input {
+  background: #f6f8fc;
+  border: 1px solid #e4e7ef;
+  color: #151923;
+  outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.login-input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px #f9731618;
+}
+.login-submit {
+  color: #ffffff;
+  background: linear-gradient(100deg, #f97316, #f58225);
+  transition: filter 150ms, box-shadow 150ms;
+}
+.login-submit:hover:not(:disabled) {
+  filter: brightness(0.97);
+  box-shadow: 0 6px 16px #f9731626;
+}
+@media (max-width: 639px) {
+  .login-stripes::before { left: -90px; opacity: 0.35; }
+  .login-stripes::after { right: -90px; opacity: 0.35; }
+}

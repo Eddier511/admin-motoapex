@@ -60,11 +60,15 @@ Las credenciales MySQL pertenecen exclusivamente al backend. El SQL inicial en `
 
 ## Identidad visual
 
-El logo oficial completo está en `public/motoapex-logo.png`. Se muestra una vez en
-el inicio de sesión y una vez en el encabezado del panel con `object-contain`.
-Los iconos se generan desde esa imagen sin recortarla ni alterar sus proporciones:
-`python scripts/generate-brand-icons.py` (requiere Pillow).
-El ICO incluye 16, 32 y 48 px; el icono Apple mide 180 × 180 px.
+El logo oficial completo está en `src/assets/motoapex-logo.png`, importado por Vite
+para incluirlo en el compilado con nombre versionado. Se muestra una vez a la
+izquierda en el encabezado del menú y una vez en la tarjeta centrada de login,
+sin recortes ni cambios de proporciones. El pie de login dice MotoApex Costa Rica.
+`public/favicon.ico` es el ICO oficial suministrado, con 16, 32 y 48 px.
+`python scripts/generate-brand-icons.py` (Pillow) genera el icono Apple de 180 px
+desde el logo y valida el ICO sin modificarlo.
+Estos tres archivos se guardan como binarios normales en Git para evitar que
+clones o empaquetadores sin Git LFS sirvan archivos de referencia en su lugar.
 El título es MotoApex Admin y se conserva noindex/nofollow y robots.txt.
 En móvil el menú inicia colapsado, se expande sobre el contenido y se cierra
 al navegar. Los avisos dejan libre el encabezado y su botón para colapsar.

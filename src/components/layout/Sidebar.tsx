@@ -1,3 +1,4 @@
+import motoapexLogo from "../../assets/motoapex-logo.png"
 import { LayoutDashboard, Bike, Tag, Grid3X3, Percent, Package, Monitor, Users, Settings, LogOut, FileText } from "lucide-react"
 import { useApp } from "../../context/AppContext"
 import { canReadCatalog } from "../../lib/permissions"
@@ -30,8 +31,9 @@ export function Sidebar() {
   return (
     <aside aria-label="Barra lateral" data-collapsed={sidebarCollapsed} className="admin-sidebar flex flex-col h-full border-r transition-all duration-300 shrink-0"
       style={{ width: sidebarCollapsed ? 72 : 248, background: "var(--card)", borderColor: "var(--border)" }}>
-      <div className="flex items-center gap-3 px-5 h-16 shrink-0 border-b" style={{ borderColor: "var(--border)" }}>
-        {!sidebarCollapsed && <p className="text-sm font-semibold text-zinc-500">Administración</p>}
+      <div className="flex items-center justify-center px-2 h-16 shrink-0 border-b" style={{ borderColor: "var(--border)" }}>
+        <img src={motoapexLogo} alt="MotoApex Costa Rica" width={52} height={52}
+          className="w-[52px] h-[52px] object-contain shrink-0" />
       </div>
       <nav aria-label="Menú principal" className="sidebar-navigation flex-1 overflow-y-auto px-3 py-4">
         {groups.map(group => {

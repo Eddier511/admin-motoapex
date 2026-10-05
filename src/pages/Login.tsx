@@ -1,8 +1,10 @@
+import motoapexLogo from "../assets/motoapex-logo.png"
+
 import { errorMessage } from "../lib/api"
 
 import { useState } from "react"
 
-import { Eye, EyeOff, Lock, Mail } from "lucide-react"
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react"
 
 import { useApp } from "../context/AppContext"
 
@@ -40,169 +42,63 @@ export function Login() {
   }
 
   return (
-    <div
-      className="min-h-screen flex"
-      style={{ background: "var(--background)" }}
-    >
-      {/* Left panel */}
-      <div
-        className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #18181b 0%, #2c1000 100%)",
-        }}
-      >
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 30% 50%, #f97316 0%, transparent 60%)",
-          }}
-        />
-        <div className="relative">
-          <h2
-            className="text-4xl font-bold text-white mb-4 leading-tight"
-            style={{ fontFamily: "DM Sans, sans-serif" }}
-          >
-            Panel de
-            <br />
-            Administración
-          </h2>
-          <p className="text-zinc-400 text-base leading-relaxed max-w-sm">
-            Gestiona todo el contenido de MotoApex — motocicletas, inventario,
-            leads y más desde un solo lugar.
-          </p>
-        </div>
-        <div className="relative">
-          <p className="text-sm text-zinc-400">
-            Catálogo, inventario y consultas conectados a MotoApex.
-          </p>
-        </div>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-8">
-        <div className="w-full max-w-sm">
-          <div className="flex items-center gap-4 mb-8">
-            <img src={`${import.meta.env.BASE_URL}motoapex-logo.png`} alt="MotoApex Costa Rica"
-              width={104} height={104} className="w-[104px] h-[104px] object-contain shrink-0" />
-            <p className="font-bold text-zinc-100">MotoApex Admin</p>
-          </div>
-
-          <h1
-            className="text-2xl font-bold text-zinc-100 mb-2"
-            style={{ fontFamily: "DM Sans, sans-serif" }}
-          >
+    <main className="login-screen min-h-svh flex items-center justify-center px-4 py-8 sm:py-12">
+      <div className="login-stripes" aria-hidden="true" />
+      <section aria-labelledby="login-title" className="login-card relative w-full max-w-[520px] rounded-[20px] px-6 py-8 sm:px-9 sm:py-9">
+        <div className="text-center mb-8">
+          <img src={motoapexLogo} alt="MotoApex Costa Rica"
+            width={128} height={128} className="w-32 h-32 object-contain mx-auto mb-5" />
+          <h1 id="login-title" className="text-[28px] sm:text-[32px] font-bold tracking-tight leading-tight text-[#151923]">
             Iniciar sesión
           </h1>
-          <p className="text-sm text-zinc-500 mb-8">
+          <p className="text-sm sm:text-base text-[#9095a4] mt-2">
             Accede a tu panel de administración
           </p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <p role="alert" className="text-sm text-red-500">
-                {error}
-              </p>
-            )}
-            <div>
-              <label
-                htmlFor="login-email"
-                className="block text-xs font-medium text-zinc-400 mb-1.5"
-              >
-                Correo electrónico
-              </label>
-              <div className="relative">
-                <Mail
-                  size={15}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-                />
-                <input
-                  id="login-email"
-                  disabled={loading}
-                  autoComplete="username"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full pl-9 pr-4 py-2.5 text-sm rounded-lg border outline-none transition-colors focus:ring-1"
-                  style={
-                    {
-                      background: "var(--secondary)",
-                      borderColor: "var(--border)",
-                      color: "var(--foreground)",
-                      "--tw-ring-color": "var(--primary)",
-                    } as React.CSSProperties
-                  }
-                />
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 break-words">{error}</p>}
+          <div>
+            <label htmlFor="login-email" className="block text-sm font-medium text-[#545b69] mb-2">Correo electrónico</label>
+            <div className="relative">
+              <Mail size={18} aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#848b99]" />
+              <input id="login-email" disabled={loading} autoComplete="username" type="email"
+                value={email} onChange={e => setEmail(e.target.value)} required
+                className="login-input w-full h-[52px] pl-12 pr-4 rounded-xl text-base" />
             </div>
-            <div>
-              <label
-                htmlFor="login-password"
-                className="block text-xs font-medium text-zinc-400 mb-1.5"
-              >
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock
-                  size={15}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-                />
-                <input
-                  id="login-password"
-                  disabled={loading}
-                  autoComplete="current-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full pl-9 pr-10 py-2.5 text-sm rounded-lg border outline-none transition-colors"
-                  style={{
-                    background: "var(--secondary)",
-                    borderColor: "var(--border)",
-                    color: "var(--foreground)",
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button type="button" disabled className="text-xs text-zinc-500">
-                Recuperación de contraseña pendiente
+          </div>
+          <div>
+            <label htmlFor="login-password" className="block text-sm font-medium text-[#545b69] mb-2">Contraseña</label>
+            <div className="relative">
+              <Lock size={18} aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#848b99]" />
+              <input id="login-password" disabled={loading} autoComplete="current-password"
+                type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required
+                className="login-input w-full h-[52px] pl-12 pr-12 rounded-xl text-base" />
+              <button type="button" disabled={loading} aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={showPassword} onClick={() => setShowPassword(s => !s)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-lg text-[#848b99] hover:text-[#353c49] focus-visible:outline-2 focus-visible:outline-orange-500">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2"
-              style={{
-                background: "var(--primary)",
-                color: "#000",
-                opacity: loading ? 0.7 : 1,
-              }}
-            >
-              {loading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Ingresando...
-                </>
-              ) : (
-                "Ingresar"
-              )}
-            </button>
-          </form>
+          </div>
+          <div className="flex justify-end">
+            <span className="text-xs text-[#989ead]">Recuperación de contraseña pendiente</span>
+          </div>
+          <button type="submit" disabled={loading}
+            className="login-submit w-full h-[54px] rounded-xl text-base font-semibold flex items-center justify-center gap-3 mt-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500">
+            {loading ? <>
+              <span aria-hidden="true" className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Ingresando...
+            </> : <>Ingresar <ArrowRight size={21} aria-hidden="true" /></>}
+          </button>
+        </form>
 
-          <p className="text-xs text-center text-zinc-600 mt-8">
-            MotoApex Costa Rica · admin.motoapexcr.com
-          </p>
+        <div className="flex items-center gap-3 mt-8 text-center">
+          <span aria-hidden="true" className="h-px bg-[#e8eaf0] flex-1" />
+          <p className="text-[11px] sm:text-xs text-[#989ead]">MotoApex Costa Rica</p>
+          <span aria-hidden="true" className="h-px bg-[#e8eaf0] flex-1" />
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }

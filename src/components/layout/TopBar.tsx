@@ -59,10 +59,8 @@ export function TopBar() {
             Mostrar/ocultar barra lateral <kbd className="ml-2 rounded bg-white/20 px-1.5 py-0.5">Ctrl+Shift+S</kbd>
           </div>
         </div>
-        <img src={`${import.meta.env.BASE_URL}motoapex-logo.png`} alt="MotoApex Costa Rica" width={48} height={48}
-          className="w-12 h-12 object-contain shrink-0" />
         <h1
-          className="hidden sm:block text-base font-semibold text-zinc-100 truncate"
+          className="text-sm sm:text-base font-semibold text-zinc-100 truncate"
           style={{ fontFamily: "DM Sans, sans-serif" }}
         >
           {pageTitles[currentPage] ?? ""}
