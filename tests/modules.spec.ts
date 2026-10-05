@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { promotionPayload } from "../src/lib/promotionEditor"
 import { schemas, editable } from "../src/lib/moduleSchemas"
 import type { Field, Doc } from "../src/lib/moduleSchemas"
 const BASE = "https://darksalmon-quetzal-730302.hostingersite.com/v1"
@@ -446,7 +447,13 @@ async function setup(page: Page, mode = "normal", role = "admin") {
           currency: "USD",
           price: 100,
           promoPrice: 90,
-          colors: [],
+          colors: [
+            {
+              images: [
+                { url: "https://example.test/duke.png", isPrimary: true },
+              ],
+            },
+          ],
           specs: [],
           inventory: 1,
           status: "available",
@@ -608,10 +615,25 @@ for (const kind of ["promotions", "banners", "social-links", "users"])
     const put = state.calls.find(
       (c) => c.path === `/admin/${kind}/8` && c.method === "PUT",
     )
-    expect(put.body).toEqual({
-      ...editable(schemas[kind].fields, documents[kind]),
-      ...(kind === "banners" ? { pageId: null } : {}),
-    })
+    expect(put.body).toEqual(
+      kind === "promotions"
+        ? promotionPayload(editable(schemas[kind].fields, documents[kind]), [
+            {
+              id: "3",
+              colors: [
+                {
+                  images: [
+                    { url: "https://example.test/duke.png", isPrimary: true },
+                  ],
+                },
+              ],
+            },
+          ])
+        : {
+            ...editable(schemas[kind].fields, documents[kind]),
+            ...(kind === "banners" ? { pageId: null } : {}),
+          },
+    )
     expect(put.body.id).toBeUndefined()
     expect(put.body.createdAt).toBeUndefined()
     page.on("dialog", (d) => d.accept())
@@ -775,15 +797,44 @@ test("promotion validates prices and currency without writes and can POST valid 
   await page.getByRole("button", { name: "Crear registro" }).click()
   for (const [label, val] of Object.entries({
     Título: "Disposable campaign",
-    Slug: "disposable-campaign",
     Descripción: "Test",
-    "Imagen HTTPS": "https://example.test/p.png",
     "Texto del botón": "Ver",
-    "Destino del botón (/ruta o HTTPS)": "/catalogo",
-    "Inicio (hora local)": "2026-10-01T00:00",
-    "Fin (hora local)": "2026-12-01T00:00",
+    "Fecha de inicio": "2026-10-01",
+    "Fecha de finalización": "2026-12-01",
   }))
     await page.getByLabel(label, { exact: true }).fill(val)
+  const editor = page.locator(".module-editor")
+  await expect(editor.getByLabel("Slug", { exact: true })).toHaveCount(0)
+  await expect(editor.getByLabel("Imagen HTTPS", { exact: true })).toHaveCount(
+    0,
+  )
+  await expect(
+    editor.getByLabel("Destino del botón (/ruta o HTTPS)", { exact: true }),
+  ).toHaveCount(0)
+  await expect(editor.locator('input[type="datetime-local"]')).toHaveCount(0)
+  await expect(editor.locator('input[type="date"]')).toHaveCount(2)
+  await editor
+    .getByRole("button", {
+      name: "Agregar motocicletas de la promoción",
+      exact: true,
+    })
+    .click()
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Motocicleta", { exact: true })
+    .selectOption("3")
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Moneda", { exact: true })
+    .selectOption("USD")
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Precio original", {
+      exact: true,
+    })
+    .fill("100")
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Precio promocional", {
+      exact: true,
+    })
+    .fill("90")
   await page
     .locator(".module-editor")
     .getByRole("button", { name: "Guardar", exact: true })
@@ -791,6 +842,63 @@ test("promotion validates prices and currency without writes and can POST valid 
   await expect
     .poll(() => state.docs.promotions.some((d: any) => d.id === "9001"))
     .toBeTruthy()
+  const post = state.calls.find(
+    (c) => c.path === "/admin/promotions" && c.method === "POST",
+  )
+  expect(post.body).toMatchObject({
+    imageUrl: "https://example.test/duke.png",
+    startsAt: "2026-10-01T00:00:00-06:00",
+    endsAt: "2026-12-01T23:59:59-06:00",
+    buttonLabel: "Ver",
+    buttonHref: "/motocicletas",
+    motorcycles: [
+      {
+        motorcycleId: "3",
+        originalPrice: 100,
+        promoPrice: 90,
+        currency: "USD",
+      },
+    ],
+  })
+  expect(post.body.slug).toMatch(/^promo-disposable-campaign-[a-f0-9]{8}$/)
+  await page.getByRole("button", { name: "Editar / detalle" }).last().click()
+  await expect(page.getByLabel("Fecha de inicio", { exact: true })).toHaveValue(
+    "2026-10-01",
+  )
+  await expect(
+    page.getByLabel("Fecha de finalización", { exact: true }),
+  ).toHaveValue("2026-12-01")
+})
+
+test("promotion cannot save a selected motorcycle without gallery photos", async ({
+  page,
+}) => {
+  const state = await setup(page)
+  await page.route(BASE + "/admin/motorcycles", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: [
+          { id: "3", model: "Duke", currency: "USD", brandId: "1", colors: [] },
+        ],
+      }),
+    }),
+  )
+  await login(page)
+  await nav(page, "Promociones")
+  await page.getByRole("button", { name: "Editar / detalle" }).click()
+  await page
+    .locator(".module-editor")
+    .getByRole("button", { name: "Guardar", exact: true })
+    .click()
+  await expect(page.locator(".module-editor").getByRole("alert")).toContainText(
+    "necesita una foto HTTPS",
+  )
+  expect(
+    state.calls.some(
+      (c) => c.path === "/admin/promotions/8" && c.method === "PUT",
+    ),
+  ).toBeFalsy()
 })
 test("web content opens banners without pages or page-related requests", async ({
   page,

@@ -1,4 +1,5 @@
 import { type Doc, type Field } from "../../lib/moduleSchemas"
+import { promotionDay } from "../../lib/promotionEditor"
 
 export function ModuleFields({
   fields,
@@ -227,7 +228,12 @@ export function ModuleFields({
                 item.title,
             }))
           : field.options
-        const dateValue = field.type === "date" && v ? localDate(v) : (v ?? "")
+        const dateValue =
+          field.type === "date" && v
+            ? field.calendarOnly
+              ? promotionDay(v)
+              : localDate(v)
+            : (v ?? "")
         return (
           <label
             key={key}
@@ -276,7 +282,9 @@ export function ModuleFields({
                 required={field.required}
                 type={
                   field.type === "date"
-                    ? "datetime-local"
+                    ? field.calendarOnly
+                      ? "date"
+                      : "datetime-local"
                     : field.type || "text"
                 }
                 autoComplete={
@@ -290,7 +298,7 @@ export function ModuleFields({
                     ? ["order", "day", "level"].includes(key)
                       ? "1"
                       : "any"
-                    : field.type === "date"
+                    : field.type === "date" && !field.calendarOnly
                       ? "1"
                       : undefined
                 }
@@ -312,7 +320,9 @@ export function ModuleFields({
                           : Number(e.target.value)
                       : field.type === "date"
                         ? e.target.value
-                          ? new Date(e.target.value).toISOString()
+                          ? field.calendarOnly
+                            ? e.target.value
+                            : new Date(e.target.value).toISOString()
                           : field.nullable
                             ? null
                             : ""

@@ -27,6 +27,8 @@ Los banners no tienen controles de inicio ni fin: al crear o guardar se envían 
 
 Páginas se retiró de la interfaz de Contenido web, que abre en Banners y conserva Contacto y horarios y Redes sociales. Los banners se guardan sin página relacionada (pageId null), sin consultar /admin/pages. Esta modificación de la interfaz no elimina registros existentes de la base de datos. La suite actual verifica la ausencia de Páginas y de esas consultas en lugar de su CRUD anterior.
 
+Promociones oculta slug, imagen y destino manual. Al crear genera un slug a partir del título con sufijo aleatorio; al editar conserva el slug del servidor. Usa la imagen primaria HTTPS de la primera moto seleccionada, o su primera foto HTTPS disponible. Si falta moto o foto, bloquea el guardado con un error visible. Las fechas de calendario usan America/Costa_Rica: inicio 00:00:00 y final 23:59:59 (offset -06:00), respetando el día al volver a editar. Mantiene texto del botón, precios y monedas por moto. La API aún exige buttonHref; se envía /motocicletas como destino seguro. La web debe implementar la apertura del popup usando motorcycleId y los precios/endsAt de la promoción; ese cambio visual no se implementa en este repositorio.
+
 ## Pendiente en Hostinger, con datos desechables
 
 1. Confirmar migraciones 002–005 con el administrador del backend. No borrar/reimportar la base.

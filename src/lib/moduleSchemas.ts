@@ -17,6 +17,7 @@ export type Field = {
     | "blocks"
   required?: boolean
   nullable?: boolean
+  calendarOnly?: boolean
   optional?: boolean
   options?: { value: string; label: string }[]
   reference?: "brands" | "motorcycles" | "pages" | "roles"
@@ -439,6 +440,12 @@ export function validateModule(
   )
     return "El fin debe ser posterior al inicio."
   if (kind === "promotions") {
+    if (!doc.motorcycles?.length)
+      return "Selecciona al menos una motocicleta para la promoción."
+    if (!doc.imageUrl)
+      return "La primera motocicleta seleccionada necesita una foto HTTPS en su galería."
+    if (!doc.startsAt || !doc.endsAt)
+      return "Selecciona las fechas de inicio y finalización."
     const seen = new Set<string>()
     for (const item of doc.motorcycles) {
       const moto = refs.motorcycles?.find((m) => m.id === item.motorcycleId)

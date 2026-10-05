@@ -11,6 +11,7 @@ import {
 import { ModuleFields } from "../components/ui/ModuleFields"
 import { RemoteState } from "../components/ui/RemoteState"
 import { Badge } from "../components/ui/Badge"
+import { promotionFields, promotionPayload } from "../lib/promotionEditor"
 
 export function ResourceModule({ kind }: { kind: string }) {
   const schema = schemas[kind]
@@ -83,7 +84,9 @@ export function ResourceModule({ kind }: { kind: string }) {
         ]
       : kind === "banners"
         ? schema.fields.filter((f) => f.type !== "date")
-        : schema.fields
+        : kind === "promotions"
+          ? promotionFields(schema.fields)
+          : schema.fields
   const run = <T,>(fn: (t?: string) => Promise<T>) =>
     schema.sensitive ? sensitive(schema.sensitive, fn) : fn()
   async function edit(id?: string) {
@@ -235,7 +238,15 @@ export function ResourceModule({ kind }: { kind: string }) {
             onSubmit={async (e) => {
               e.preventDefault()
               if (busy) return
-              const body = editable(fields, form)
+              let body = editable(
+                kind === "promotions" ? schema.fields : fields,
+                form,
+              )
+              if (kind === "promotions")
+                body = promotionPayload(
+                  body,
+                  remote.data!.refs.motorcycles || [],
+                )
               if (kind === "banners") {
                 body.startsAt = null
                 body.endsAt = null
@@ -315,6 +326,13 @@ export function ResourceModule({ kind }: { kind: string }) {
               refs={remote.data!.refs}
               disabled={busy}
             />
+            {kind === "promotions" && (
+              <p className="text-sm text-zinc-500 sm:col-span-2">
+                La imagen se toma de la primera motocicleta seleccionada. La
+                promoción termina al finalizar el día indicado, hora de Costa
+                Rica. El botón está asociado a las motocicletas de la promoción.
+              </p>
+            )}
             {error && (
               <p role="alert" className="text-sm text-red-600 break-words">
                 {error}
