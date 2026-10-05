@@ -29,11 +29,32 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   whatsapp: { label: 'WhatsApp', className: 'bg-green-500/10 text-green-400 border-green-500/20' },
 };
 
+const palettes = {
+  green: { background: "#f0faf4", borderColor: "#a7efc3", color: "#327a59", dot: "#58b687" },
+  blue: { background: "#eff6ff", borderColor: "#bfdbfe", color: "#2563a3", dot: "#60a5fa" },
+  yellow: { background: "#fffbeb", borderColor: "#fde68a", color: "#946200", dot: "#e9b52e" },
+  red: { background: "#fff1f2", borderColor: "#fecdd3", color: "#b52e46", dot: "#ee6d83" },
+  orange: { background: "#fff8ef", borderColor: "#fbd3a2", color: "#bd491b", dot: "#ed7a32" },
+  purple: { background: "#fdf2f8", borderColor: "#f6c6e7", color: "#b82c69", dot: "#dc5395" },
+  zinc: { background: "#f6f6f7", borderColor: "#dedee3", color: "#62626d", dot: "#9898a3" },
+}
+
+export function statusStyle(status: string) {
+  const config = statusConfig[status]
+  const tone = Object.keys(palettes).find(key => config?.className.includes(`bg-${key}-`)) as keyof typeof palettes | undefined
+  return palettes[tone || "zinc"]
+}
+
+export function statusLabel(status: string) {
+  return statusConfig[status]?.label ?? status
+}
+
 export function Badge({ status, size = 'sm' }: BadgeProps) {
-  const config = statusConfig[status] ?? { label: status, className: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' };
+  const { dot, ...style } = statusStyle(status)
   return (
-    <span className={`inline-flex items-center border rounded-full font-medium ${size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'} ${config.className}`}>
-      {config.label}
-    </span>
-  );
+    <div data-status={status} className={`inline-flex items-center gap-2 border rounded-lg font-medium whitespace-nowrap ${size === 'sm' ? 'text-xs px-2.5 py-1' : 'text-sm px-3 py-1.5'}`} style={style}>
+      <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
+      {statusLabel(status)}
+    </div>
+  )
 }

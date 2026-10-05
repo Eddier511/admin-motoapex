@@ -113,3 +113,11 @@ code, pre, .mono {
 }
 
 button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.sidebar-navigation {
+  scrollbar-width: thin;
+  scrollbar-color: #c4c4c8 transparent;
+}
+.sidebar-navigation::-webkit-scrollbar { width: 7px; }
+.sidebar-navigation::-webkit-scrollbar-thumb { background: #c4c4c8; border-radius: 6px; }
+.sidebar-navigation::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }

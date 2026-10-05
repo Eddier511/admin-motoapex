@@ -100,6 +100,7 @@ export function MotorcyclesList() {
       remote.reload()
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
       setConfirmDelete(null)
     } finally {
       setBusy(false)
@@ -126,6 +127,7 @@ export function MotorcyclesList() {
       remote.reload()
     } catch (e) {
       setError(errorMessage(e))
+      addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
     }
@@ -396,13 +398,10 @@ export function MotorcyclesList() {
                         <button
                           disabled={busy || !can("motorcycles.publish")}
                           onClick={() => void togglePublish(moto.id)}
-                          className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                            moto.published
-                              ? "border-green-500/30 bg-green-500/10 text-green-400"
-                              : "border-zinc-700 text-zinc-600"
-                          }`}
+                          className="rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
+                          aria-label={moto.published ? "Despublicar motocicleta" : "Publicar motocicleta"}
                         >
-                          {moto.published ? "Sí" : "No"}
+                          <Badge status={moto.published ? "published" : "draft"} />
                         </button>
                       </td>
                       <td className="p-4 text-center">
