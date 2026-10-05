@@ -19,9 +19,15 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
       - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test
+      - name: Package Hostinger ZIP
+        working-directory: dist
+        run: zip -r ../admin-motoapex-hostinger.zip .
       - uses: actions/upload-artifact@v4
         with:
           name: admin-motoapex-hostinger
-          path: dist/
+          path: admin-motoapex-hostinger.zip
           include-hidden-files: true
