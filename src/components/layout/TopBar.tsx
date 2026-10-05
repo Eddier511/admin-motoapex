@@ -1,6 +1,6 @@
 import { Search, Bell, ChevronDown, LogOut, User, PanelLeft } from "lucide-react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 import { useApp } from "../../context/AppContext"
 
@@ -29,16 +29,7 @@ export function TopBar() {
 
   const [notifOpen, setNotifOpen] = useState(false)
 
-  useEffect(() => {
-    const shortcut = (event: KeyboardEvent) => {
-      if (!event.repeat && (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "s") {
-        event.preventDefault()
-        toggleSidebar()
-      }
-    }
-    window.addEventListener("keydown", shortcut)
-    return () => window.removeEventListener("keydown", shortcut)
-  }, [toggleSidebar])
+  const [sidebarTipOpen, setSidebarTipOpen] = useState(false)
 
   return (
     <header
@@ -50,13 +41,17 @@ export function TopBar() {
       }}
     >
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-        <div className="relative group">
-          <button onClick={toggleSidebar} aria-label="Mostrar/ocultar barra lateral" aria-expanded={!sidebarCollapsed}
+        <div className="relative" onMouseEnter={() => setSidebarTipOpen(true)} onMouseLeave={() => setSidebarTipOpen(false)}>
+          <button onClick={() => { toggleSidebar(); setSidebarTipOpen(false) }} aria-label="Mostrar/ocultar barra lateral" aria-expanded={!sidebarCollapsed}
+            onFocus={event => { if (event.currentTarget.matches(":focus-visible")) setSidebarTipOpen(true) }}
+            onBlur={() => setSidebarTipOpen(false)}
             aria-describedby="sidebar-toggle-tip" className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-secondary focus-visible:outline-2 focus-visible:outline-primary">
             <PanelLeft size={21} />
           </button>
-          <div id="sidebar-toggle-tip" role="tooltip" className="absolute left-0 top-12 z-50 whitespace-nowrap rounded-lg bg-neutral-900 px-3 py-2 text-xs shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" style={{ color: "white" }}>
-            Mostrar/ocultar barra lateral <kbd className="ml-2 rounded bg-white/20 px-1.5 py-0.5">Ctrl+Shift+S</kbd>
+          <div id="sidebar-toggle-tip" role="tooltip" aria-hidden={!sidebarTipOpen}
+            className={`absolute left-0 top-12 z-50 whitespace-nowrap rounded-lg px-3 py-2 text-xs shadow-lg pointer-events-none transition-opacity ${sidebarTipOpen ? "visible opacity-100" : "invisible opacity-0"}`}
+            style={{ color: "white", background: "#4b5563" }}>
+            Mostrar/ocultar barra lateral
           </div>
         </div>
         <h1

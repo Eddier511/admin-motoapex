@@ -1,3 +1,5 @@
+import { LoadingOverlay } from "./LoadingOverlay"
+
 export function RemoteState({
   loading,
   error,
@@ -7,12 +9,7 @@ export function RemoteState({
   error?: string
   retry?: () => void
 }) {
-  if (loading)
-    return (
-      <p role="status" className="p-6 text-sm text-zinc-500">
-        Cargando…
-      </p>
-    )
+  if (loading) return <LoadingOverlay />
 
   if (error)
     return (

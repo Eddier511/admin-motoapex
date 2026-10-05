@@ -183,6 +183,25 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   filter: brightness(0.97);
   box-shadow: 0 6px 16px #f9731626;
 }
+
+.loading-backdrop {
+  background: rgb(12 14 18 / 45%);
+  backdrop-filter: blur(3px);
+}
+.loading-popup {
+  border: 1px solid #ffffffcc;
+  box-shadow: 0 24px 80px #00000026;
+}
+.loading-spinner { animation: spin 1.1s linear infinite; }
+.loading-progress { animation: loading-slide 1.5s ease-in-out infinite; }
+@keyframes loading-slide {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(360%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner, .loading-progress { animation: none; }
+  .loading-progress { left: 30%; }
+}
 @media (max-width: 639px) {
   .login-stripes::before { left: -90px; opacity: 0.35; }
   .login-stripes::after { right: -90px; opacity: 0.35; }

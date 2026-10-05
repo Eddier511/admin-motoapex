@@ -613,7 +613,7 @@ test("new brand POST and delete, pending modules never call undocumented endpoin
 })
 
 
-test("grouped sidebar, icon tooltip and keyboard collapse preserve navigation", async ({ page }) => {
+test("grouped sidebar, hover tooltip and click collapse preserve navigation", async ({ page }) => {
   await setup(page)
   await login(page)
   const sidebar = page.getByRole("complementary", { name: "Barra lateral" })
@@ -623,12 +623,18 @@ test("grouped sidebar, icon tooltip and keyboard collapse preserve navigation", 
   await expect(toggle).toHaveText("")
   await toggle.hover()
   await expect(page.getByRole("tooltip")).toHaveCSS("opacity", "1")
+  await expect(page.getByRole("tooltip")).toHaveText("Mostrar/ocultar barra lateral")
+  await expect(page.getByRole("tooltip")).toHaveCSS("background-color", "rgb(75, 85, 99)")
+  await page.mouse.move(900, 900)
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+  await toggle.hover()
   await toggle.click()
   await expect(toggle).toHaveAttribute("aria-expanded", "false")
   await expect(sidebar).toHaveCSS("width", "72px")
   await nav(page, "Motocicletas")
   await expect(page.locator('[data-status="available"]')).toHaveText("Disponible")
-  await page.keyboard.press("Control+Shift+S")
+  await toggle.click()
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
   await expect(toggle).toHaveAttribute("aria-expanded", "true")
   await expect(sidebar).toHaveCSS("width", "248px")
   await expect(page.locator('nav [aria-current="page"]')).toHaveAttribute("aria-label", "Motocicletas")
@@ -707,5 +713,47 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
     await page.mouse.move(viewport.width - 5, viewport.height - 5)
     await page.screenshot({ path: `test-results/branding-dashboard-${viewport.width}.png`, fullPage: true })
+  })
+}
+
+
+for (const width of [1440, 390]) {
+  test(`loading popup covers pending requests and clears on ${width === 390 ? "error" : "success"} at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await setup(page)
+    await login(page)
+    let release!: () => void
+    const pending = new Promise<void>(resolve => { release = resolve })
+    let failLoad = width === 390
+    await page.route(BASE + "/admin/brands", async route => {
+      await pending
+      if (failLoad) {
+        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: { code: "TEST_ERROR", message: "Controlled API error" } }) })
+      } else await route.fallback()
+    })
+    await nav(page, "Marcas")
+    const popup = page.getByRole("dialog", { name: "Cargando experiencia" })
+    try {
+      await expect(popup).toBeVisible()
+      await expect(page.getByRole("progressbar", { name: "Carga en curso" })).toBeVisible()
+      await expect(page.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow")
+      await expect(page.locator("#root")).toHaveJSProperty("inert", true)
+      if (width === 390) {
+        await page.emulateMedia({ reducedMotion: "reduce" })
+        await expect(page.locator(".loading-progress")).toHaveCSS("animation-name", "none")
+      }
+      await page.screenshot({ path: `test-results/loading-popup-${width}.png`, fullPage: true })
+    } finally {
+      release()
+    }
+    await expect(popup).toHaveCount(0)
+    await expect(page.locator("#root")).toHaveJSProperty("inert", false)
+    if (width === 390) {
+      await expect(page.getByRole("alert")).toContainText("Controlled API error")
+      failLoad = false
+      await page.getByRole("button", { name: "Reintentar" }).click()
+    }
+    await expect(page.getByRole("heading", { name: "Marcas", exact: true })).toBeVisible()
+    await expect(page.getByText("KTM", { exact: true })).toBeVisible()
   })
 }
