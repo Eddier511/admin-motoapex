@@ -1,4 +1,18 @@
-export type Page = "dashboard" | "motorcycles" | "motorcycle-form" | "brands" | "categories" | "promotions" | "inventory" | "used" | "content" | "leads" | "users" | "settings" | "login"
+export type Page =
+  | "dashboard"
+  | "motorcycles"
+  | "motorcycle-form"
+  | "brands"
+  | "categories"
+  | "promotions"
+  | "inventory"
+  | "used"
+  | "content"
+  | "leads"
+  | "users"
+  | "settings"
+  | "login"
+  | "account"
 
 export interface User {
   id: string
@@ -14,6 +28,9 @@ export interface User {
   lastAccess: string
 
   avatar?: string
+  phone?: string
+  avatarUrl?: string
+  mustChangePassword?: boolean
 
   permissions?: string[]
 }

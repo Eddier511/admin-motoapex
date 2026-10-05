@@ -37,6 +37,11 @@ export function Leads() {
   )
 
   const leads = remote.data ?? []
+  const assignees = useRemote((signal) =>
+    request<{ id: string; name: string }[]>("/admin/lead-assignees", {
+      signal,
+    }),
+  )
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -247,29 +252,42 @@ export function Leads() {
                     <Badge status={lead.type} />
                   </td>
                   <td className="px-4 py-3">
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 border rounded-lg" style={statusStyle(lead.status)}>
-                    <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: statusStyle(lead.status).dot }} />
-                    <select
-                      aria-label={`Estado de ${lead.name}`}
-                      disabled={busy}
-                      value={lead.status}
-                      onChange={(e) => {
-                        e.stopPropagation()
-                        updateStatus(lead.id, e.target.value as Lead["status"])
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs font-medium bg-transparent cursor-pointer outline-none"
+                    <div
+                      className="inline-flex items-center gap-2 px-2.5 py-1 border rounded-lg"
+                      style={statusStyle(lead.status)}
                     >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {statusLabel(s)}
-                        </option>
-                      ))}
-                    </select>
+                      <span
+                        aria-hidden="true"
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: statusStyle(lead.status).dot }}
+                      />
+                      <select
+                        aria-label={`Estado de ${lead.name}`}
+                        disabled={busy}
+                        value={lead.status}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          updateStatus(
+                            lead.id,
+                            e.target.value as Lead["status"],
+                          )
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs font-medium bg-transparent cursor-pointer outline-none"
+                      >
+                        {STATUSES.map((s) => (
+                          <option key={s} value={s}>
+                            {statusLabel(s)}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-500">
-                    {lead.assignedTo ?? "—"}
+                    {assignees.data?.find((u) => u.id === lead.assignedTo)
+                      ?.name ||
+                      lead.assignedTo ||
+                      "—"}
                   </td>
                 </tr>
               ))}
@@ -339,22 +357,50 @@ export function Leads() {
                 Asignar a
               </label>
               <label className="text-xs text-zinc-500">
-                ID de usuario activo admin/ventas
-                <input
-                  aria-label="ID del responsable"
+                Responsable
+                <select
+                  aria-label="Responsable"
                   value={assignedTo}
                   onChange={(e) => setAssignedTo(e.target.value)}
-                  disabled={busy}
+                  disabled={busy || assignees.loading || !!assignees.error}
                   className="w-full mt-1 text-sm border rounded-lg p-2"
-                  placeholder="ID del servidor; vacío desasigna"
-                />
+                >
+                  <option value="">Sin asignar</option>
+                  {assignedTo &&
+                    !assignees.data?.some((u) => u.id === assignedTo) && (
+                      <option value={assignedTo}>
+                        Usuario no asignable ({assignedTo})
+                      </option>
+                    )}
+                  {assignees.data?.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
               </label>
-              <p className="text-xs text-zinc-500 mt-2">
-                Listado de usuarios pendiente de API.
-              </p>
+              {assignees.loading && (
+                <p className="text-xs text-zinc-500 mt-2">
+                  Cargando responsables…
+                </p>
+              )}
+              {assignees.error && (
+                <RemoteState error={assignees.error} retry={assignees.reload} />
+              )}
+              {!assignees.loading &&
+                !assignees.error &&
+                !assignees.data?.length && (
+                  <p className="text-xs text-zinc-500 mt-2">
+                    No hay responsables activos.
+                  </p>
+                )}
               <button
                 disabled={
-                  busy || (assignedTo !== "" && !/^\d+$/.test(assignedTo))
+                  busy ||
+                  assignees.loading ||
+                  !!assignees.error ||
+                  (assignedTo !== "" &&
+                    !assignees.data?.some((u) => u.id === assignedTo))
                 }
                 onClick={() => void updateLead(selected.id, { assignedTo })}
                 className="mt-2 border rounded-lg px-3 py-1 text-sm"

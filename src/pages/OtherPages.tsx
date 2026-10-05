@@ -12,7 +12,9 @@ import { useApp } from "../context/AppContext"
 
 import { Badge } from "../components/ui/Badge"
 
-import { RemoteState, Pending } from "../components/ui/RemoteState"
+import { RemoteState } from "../components/ui/RemoteState"
+import { ResourceModule, WebContentModule } from "./Modules"
+import { SettingsModule } from "./Account"
 
 import type { Category } from "../types"
 
@@ -363,12 +365,10 @@ export function Inventory() {
   )
 }
 
-export const Promotions = () => <Pending title="Promociones" />
+export const Promotions = () => <ResourceModule kind="promotions" />
 
-export const WebContent = () => <Pending title="Contenido web" />
+export const WebContent = WebContentModule
 
-export const Users = () => <Pending title="Usuarios" />
+export const Users = () => <ResourceModule kind="users" />
 
-export const Settings = () => (
-  <Pending title="Configuración, MFA y recuperación de contraseña" />
-)
+export const Settings = SettingsModule
