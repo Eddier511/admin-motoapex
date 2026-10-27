@@ -244,7 +244,9 @@ function MotorcycleEditor({
       promoPrice: promoPrice.trim() === "" ? null : Number(promoPrice),
       currency,
 
-      inventory: Number(inventory),
+      inventory: can("inventory.manage")
+        ? Number(inventory)
+        : (existingMoto?.inventory ?? 0),
       hp: Number(hp),
       tagline,
       sku,
@@ -1177,6 +1179,7 @@ function MotorcycleEditor({
             <Section title="Control de inventario">
               <Field label="Cantidad total">
                 <Input
+                  disabled={!can("inventory.manage")}
                   type="number"
                   value={inventory}
                   onChange={(v) => {
@@ -1514,14 +1517,17 @@ function Input({
   onChange,
   placeholder,
   type = "text",
+  disabled = false,
 }: {
   value: string
   onChange: (v: string) => void
   placeholder?: string
   type?: string
+  disabled?: boolean
 }) {
   return (
     <input
+      disabled={disabled}
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}

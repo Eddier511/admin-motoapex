@@ -15,7 +15,7 @@ export function validateMotorcycle(m: Partial<Motorcycle>) {
   }
 
   for (const [key, limit] of Object.entries(limits)) {
-    const value = m[(key as keyof Motorcycle)]
+    const value = m[key as keyof Motorcycle]
 
     if (
       typeof value !== "number" ||
@@ -64,9 +64,13 @@ export function validateMotorcycle(m: Partial<Motorcycle>) {
       imageIds.add(i.id)
 
       try {
-        if (new URL(i.url).protocol !== "https:") throw new Error()
+        const url = new URL(i.url)
+        if (url.protocol !== "https:" || url.username || url.password)
+          throw new Error()
       } catch {
-        throw new Error("Todas las imágenes requieren un enlace HTTPS válido.")
+        throw new Error(
+          "Todas las imágenes requieren un enlace HTTPS sin credenciales.",
+        )
       }
     }
   }

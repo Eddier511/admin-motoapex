@@ -74,11 +74,12 @@ export function AccessFlow({
               setBusy(true)
               try {
                 if (mode === "forgot") {
-                  const r = await post<{ message: string }>(
-                    "/auth/password/forgot",
-                    { email: value },
+                  await post<{ message: string }>("/auth/password/forgot", {
+                    email: value,
+                  })
+                  setMessage(
+                    "Si existe una cuenta activa, recibirás un enlace de recuperación.",
                   )
-                  setMessage(r.message)
                 } else if (mode === "reset") {
                   if (!resetToken)
                     throw new Error(

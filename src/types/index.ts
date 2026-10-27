@@ -21,7 +21,7 @@ export interface User {
 
   email: string
 
-  role: "admin" | "sales" | "marketing" | "editor"
+  role: string
 
   status: "active" | "inactive"
 

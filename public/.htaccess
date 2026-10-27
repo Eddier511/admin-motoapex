@@ -10,8 +10,13 @@ DirectoryIndex index.html
 
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; connect-src 'self' https://darksalmon-quetzal-730302.hostingersite.com https://api.motoapexcr.com; form-action 'none'; frame-src 'none'; worker-src 'none'; frame-ancestors 'none'"
   Header always set X-Robots-Tag "noindex, nofollow"
   <FilesMatch "\.html$">
-    Header set Cache-Control "no-cache"
+    Header set Cache-Control "no-store"
   </FilesMatch>
 </IfModule>

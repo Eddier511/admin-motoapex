@@ -25,9 +25,9 @@ Typecheck/build y Playwright/Edge con respuestas controladas, IDs de prueba y co
 
 La suite no conecta una cuenta real ni altera los datos del servidor. El frontend compilado no incluye mocks. GitHub Actions debe ejecutar esa misma suite y generar el ZIP; comprobar su resultado antes de instalar.
 
-Los banners no tienen controles de inicio ni fin: al crear o guardar se envían startsAt y endsAt como null. Guardar un banner existente elimina su programación anterior; su estado Activo/Inactivo controla la publicación. Las promociones conservan las fechas exigidas por su contrato y las envían con zona horaria y segundos, sin milisegundos.
+Los banners no tienen controles de inicio ni fin. Al crear no se programa vigencia; al editar se conservan startsAt/endsAt recibidos, para no ampliar involuntariamente una campaña existente. Las promociones conservan las fechas exigidas por su contrato y las envían con zona horaria y segundos, sin milisegundos.
 
-Páginas se retiró de la interfaz de Contenido web, que abre en Banners y conserva Contacto y horarios y Redes sociales. Los banners se guardan sin página relacionada (pageId null), sin consultar /admin/pages. Esta modificación de la interfaz no elimina registros existentes de la base de datos. La suite actual verifica la ausencia de Páginas y de esas consultas en lugar de su CRUD anterior.
+Páginas se retiró de la interfaz de Contenido web, que abre en Banners y conserva Contacto y horarios y Redes sociales. Los banners nuevos se crean sin página relacionada; los existentes conservan su pageId sin consultar /admin/pages. Esta modificación de la interfaz no elimina registros existentes de la base de datos. La suite actual verifica la ausencia de Páginas y de esas consultas en lugar de su CRUD anterior.
 
 Promociones oculta slug, imagen y destino manual. Al crear genera un slug a partir del título con sufijo aleatorio; al editar conserva el slug del servidor. Usa la imagen primaria HTTPS de la primera moto seleccionada, o su primera foto HTTPS disponible. Si falta moto o foto, bloquea el guardado con un error visible. Las fechas de calendario usan America/Costa_Rica: inicio 00:00:00 y final 23:59:59 (offset -06:00), respetando el día al volver a editar. Mantiene texto del botón, precios y monedas por moto. La API aún exige buttonHref; se envía /motocicletas como destino seguro. La web debe implementar la apertura del popup usando motorcycleId y los precios/endsAt de la promoción; ese cambio visual no se implementa en este repositorio.
 
@@ -42,3 +42,8 @@ Promociones oculta slug, imagen y destino manual. Al crear genera un slug a part
 7. Cambio obligatorio, perfil/correo y contraseña; comprobar que las sesiones revocadas reciben 401 y el admin vuelve al login. Si SMTP/MFA faltan, registrar 503 explícito y completar la instalación del backend.
 
 No se probaron estas escrituras ni envío SMTP/MFA reales en este trabajo. No hay despliegue manual ni merge automático. Futuro endpoint https://api.motoapexcr.com/v1: requiere recompilar y ajustar configuración privada de API.
+
+
+## Actualización de seguridad del 27 de octubre
+
+Consultar security-verification.md para cambios, pruebas y límites actuales. La integración soporta el contrato del PR #5 codex/security-hardening (256801ce) además de la versión anterior. Aplicar 006 y configurar worker SMTP es obligatorio en el backend nuevo; solo se verificó lectura sin credenciales en producción.

@@ -521,7 +521,7 @@ test("empty catalog and unavailable API show explicit states, no silent fallback
   await nav(page, "Motocicletas")
   await expect(page.getByText("Sin resultados", { exact: true })).toBeVisible()
 
-  await page.route(BASE + "/admin/brands", (route) => route.abort("failed"))
+  await page.route(BASE + "/admin/brands?**", (route) => route.abort("failed"))
   await nav(page, "Marcas")
   await expect(page.getByRole("alert")).toContainText("No se pudo conectar")
   await expect(
@@ -817,7 +817,7 @@ for (const width of [1440, 390]) {
       release = resolve
     })
     let failLoad = width === 390
-    await page.route(BASE + "/admin/brands", async (route) => {
+    await page.route(BASE + "/admin/brands?**", async (route) => {
       await pending
       if (failLoad) {
         await route.fulfill({
@@ -944,4 +944,249 @@ test("dashboard empty inquiries are clear and promotions are not marked pending"
     ),
   ).toBeVisible()
   await expect(page.getByText(/Promociones, analítica/)).toHaveCount(0)
+})
+
+test("logout aborts pending mutations and a new login survives delayed revocation", async ({
+  page,
+}) => {
+  await setup(page)
+  await login(page)
+  await nav(page, "Marcas")
+  let releaseDelete!: () => void, releaseLogout!: () => void
+  const deleteGate = new Promise<void>((r) => {
+    releaseDelete = r
+  })
+  const logoutGate = new Promise<void>((r) => {
+    releaseLogout = r
+  })
+  let arrived = false,
+    failed = false
+  page.on("requestfailed", (r) => {
+    if (r.url().endsWith("/admin/brands/101") && r.method() === "DELETE")
+      failed = true
+  })
+  await page.route(BASE + "/admin/brands/101", async (route) => {
+    if (route.request().method() !== "DELETE") return route.fallback()
+    arrived = true
+    await deleteGate
+    await route
+      .fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ data: { deleted: true } }),
+      })
+      .catch(() => {})
+  })
+  await page.route(BASE + "/auth/logout", async (route) => {
+    expect(route.request().headers().authorization).toBe(
+      "Bearer test-token-only",
+    )
+    await logoutGate
+    await route
+      .fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ data: { loggedOut: true } }),
+      })
+      .catch(() => {})
+  })
+  try {
+    await page
+      .getByRole("button", { name: "Eliminar KTM", exact: true })
+      .click()
+    await page
+      .getByRole("alertdialog")
+      .getByRole("button", { name: "Eliminar", exact: true })
+      .click()
+    await expect.poll(() => arrived).toBeTruthy()
+    await page
+      .getByRole("button", { name: "Cerrar sesión", exact: true })
+      .click()
+    await expect(
+      page.getByRole("heading", { name: "Iniciar sesión", exact: true }),
+    ).toBeVisible()
+    await expect.poll(() => failed).toBeTruthy()
+    await login(page)
+    const response = page.waitForResponse((r) =>
+      r.url().endsWith("/auth/logout"),
+    )
+    releaseLogout()
+    await response
+    await expect(
+      page.getByRole("heading", {
+        name: "Bienvenido, Test Admin",
+        exact: true,
+      }),
+    ).toBeVisible()
+    await expect(
+      page.getByText("Marca eliminada", { exact: true }),
+    ).toHaveCount(0)
+  } finally {
+    releaseDelete()
+    releaseLogout()
+  }
+})
+
+for (const kind of ["save", "delete"])
+  test(`malformed ${kind} response never announces success`, async ({
+    page,
+  }) => {
+    const state = await setup(page)
+    await login(page)
+    await nav(page, "Marcas")
+    await page.route(BASE + "/admin/brands/101", (route) => {
+      if (route.request().method() === "GET") return route.fallback()
+      return route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: kind === "delete" ? { deleted: false } : {},
+        }),
+      })
+    })
+    if (kind === "save") {
+      await page.getByRole("button", { name: "Editar", exact: true }).click()
+      await page.getByRole("button", { name: "Guardar", exact: true }).click()
+    } else {
+      await page
+        .getByRole("button", { name: "Eliminar KTM", exact: true })
+        .click()
+      await page
+        .getByRole("alertdialog")
+        .getByRole("button", { name: "Eliminar", exact: true })
+        .click()
+    }
+    await expect(page.getByRole("alert")).toContainText(
+      "Respuesta incompatible",
+    )
+    await expect(
+      page.getByText(kind === "save" ? "Marca guardada" : "Marca eliminada", {
+        exact: true,
+      }),
+    ).toHaveCount(0)
+    expect(state.brands).toHaveLength(1)
+  })
+
+test("catalog follows opaque cursors including empty pages", async ({
+  page,
+}) => {
+  await setup(page)
+  const cursors: (string | null)[] = []
+  await page.route(BASE + "/admin/brands?**", (route) => {
+    const params = new URL(route.request().url()).searchParams
+    expect(params.get("limit")).toBe("100")
+    const cursor = params.get("cursor")
+    cursors.push(cursor)
+    const data =
+      cursor === "2:88"
+        ? []
+        : [
+            {
+              ...brand,
+              id: cursor ? "999" : "101",
+              name: cursor ? "Second brand" : "KTM",
+            },
+          ]
+    const next = cursor === null ? "2:88" : cursor === "2:88" ? "3:77" : null
+    return route.fulfill({
+      contentType: "application/json",
+      headers: {
+        "Access-Control-Expose-Headers": "X-Next-Cursor, X-Page-Limit",
+        "X-Page-Limit": "100",
+        ...(next ? { "X-Next-Cursor": next } : {}),
+      },
+      body: JSON.stringify({ data }),
+    })
+  })
+  await login(page)
+  await nav(page, "Marcas")
+  await expect(page.getByText("2 marcas", { exact: true })).toBeVisible()
+  await expect(
+    page.getByRole("heading", { name: "Second brand", exact: true }),
+  ).toBeVisible()
+  expect(cursors).toContain("2:88")
+  expect(cursors).toContain("3:77")
+})
+
+test("oversized pages retry at a smaller limit and HTML gateway errors remain errors", async ({
+  page,
+}) => {
+  await setup(page)
+  const limits: string[] = []
+  await page.route(BASE + "/admin/brands?**", (route) => {
+    const limit = new URL(route.request().url()).searchParams.get("limit")!
+    limits.push(limit)
+    return Number(limit) > 50
+      ? route.fulfill({
+          status: 422,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: { code: "PAGE_TOO_LARGE", message: "Reduce limit" },
+          }),
+        })
+      : route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ data: [brand] }),
+        })
+  })
+  await login(page)
+  await nav(page, "Marcas")
+  await expect(page.getByText("1 marcas", { exact: true })).toBeVisible()
+  expect(limits).toContain("100")
+  expect(limits).toContain("50")
+  await page.route(BASE + "/admin/brands/101", (route) =>
+    route.request().method() === "GET"
+      ? route.fallback()
+      : route.fulfill({
+          status: 413,
+          contentType: "text/html",
+          body: "<h1>Request too large</h1>",
+        }),
+  )
+  await page.getByRole("button", { name: "Editar", exact: true }).click()
+  await page.getByRole("button", { name: "Guardar", exact: true }).click()
+  await expect(page.getByRole("alert")).toContainText("413")
+  await expect(page.getByText("Marca guardada", { exact: true })).toHaveCount(0)
+})
+
+test("editor cannot change inventory but can preserve the full editorial PUT", async ({
+  page,
+}) => {
+  const state = await setup(page, "editor")
+  await login(page)
+  await nav(page, "Motocicletas")
+  await page.getByTitle("Editar", { exact: true }).click()
+  await page
+    .getByRole("main")
+    .getByRole("button", { name: "Inventario", exact: true })
+    .click()
+  await expect(page.getByLabel("Cantidad total")).toBeDisabled()
+  await page.getByRole("button", { name: "Guardar ficha", exact: true }).click()
+  await expect(
+    page.getByText("Motocicleta guardada", { exact: true }),
+  ).toBeVisible()
+  expect(
+    state.calls.find(
+      (c) => c.path === "/admin/motorcycles/303" && c.method === "PUT",
+    )?.body.inventory,
+  ).toBe(motorcycle.inventory)
+})
+
+test("production CSP permits the real UI and disables third party scripts", async ({
+  page,
+}) => {
+  const violations: string[] = []
+  page.on("console", (message) => {
+    if (/Refused to|violates.*directive/i.test(message.text()))
+      violations.push(message.text())
+  })
+  await setup(page)
+  await login(page)
+  const policy = page.locator('meta[http-equiv="Content-Security-Policy"]')
+  await expect(policy).toHaveAttribute("content", /script-src[^;]*'self'/)
+  await expect(policy).toHaveAttribute("content", /object-src 'none'/)
+  await expect(page.locator('meta[name="referrer"]')).toHaveAttribute(
+    "content",
+    "no-referrer",
+  )
+  // Windows endpoint protection may decorate the DOM policy. The shipped policy
+  // is checked independently by check-production.mjs; it never includes those origins.
+  expect(violations).toEqual([])
 })

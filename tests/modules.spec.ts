@@ -652,12 +652,13 @@ for (const kind of ["promotions", "banners", "social-links", "users"])
         put.headers["x-reauth-token"],
       )
   })
-test("banners have no schedule controls and clear an existing schedule on save", async ({
+test("banners preserve an existing schedule without exposing date controls", async ({
   page,
 }) => {
   const state = await setup(page)
   state.docs.banners[0].startsAt = "2026-10-05T05:39:38Z"
   state.docs.banners[0].endsAt = "2026-10-08T05:40:55Z"
+  state.docs.banners[0].pageId = "17"
   await login(page)
   await nav(page, "Contenido web")
   await page.getByRole("button", { name: "Banners", exact: true }).click()
@@ -673,8 +674,9 @@ test("banners have no schedule controls and clear an existing schedule on save",
     (c) => c.path === "/admin/banners/8" && c.method === "PUT",
   )
   expect(put.body).toMatchObject({
-    startsAt: null,
-    endsAt: null,
+    startsAt: "2026-10-05T05:39:38Z",
+    endsAt: "2026-10-08T05:40:55Z",
+    pageId: "17",
     status: "active",
   })
 })
@@ -880,7 +882,7 @@ test("promotion cannot save a selected motorcycle without gallery photos", async
   page,
 }) => {
   const state = await setup(page)
-  await page.route(BASE + "/admin/motorcycles", (route) =>
+  await page.route(BASE + "/admin/motorcycles?**", (route) =>
     route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
@@ -1136,4 +1138,83 @@ for (const width of [390, 1440])
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBeTruthy()
+  })
+
+test("session expiry clears rotated recovery codes and pending reauthentication", async ({
+  page,
+}) => {
+  await page.clock.install()
+  const state = await setup(page)
+  state.mfa = true
+  await page.route(BASE + "/auth/login", async (route) => {
+    const now = await page.evaluate(() => Date.now())
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          token: "session-only-in-memory",
+          expiresAt: new Date(now + 60000).toISOString(),
+          user: profile,
+        },
+      }),
+    })
+  })
+  await login(page)
+  await nav(page, "Mi cuenta")
+  await page
+    .getByRole("button", { name: "Rotar códigos de recuperación", exact: true })
+    .click()
+  await reauth(page, true)
+  await expect(
+    page.getByRole("dialog", { name: "Códigos de recuperación", exact: true }),
+  ).toBeVisible()
+  await page.clock.fastForward(61000)
+  await expect(
+    page.getByRole("heading", { name: "Iniciar sesión", exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("dialog", { name: "Códigos de recuperación", exact: true }),
+  ).toHaveCount(0)
+  await expect(page.getByText("test-recovery-1", { exact: true })).toHaveCount(
+    0,
+  )
+  await login(page)
+  await nav(page, "Mi cuenta")
+  await page
+    .getByRole("button", { name: "Rotar códigos de recuperación", exact: true })
+    .click()
+  await expect(
+    page.getByRole("dialog", { name: "Confirma tu identidad", exact: true }),
+  ).toBeVisible()
+  await page.clock.fastForward(61000)
+  await expect(
+    page.getByRole("heading", { name: "Iniciar sesión", exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole("dialog", { name: "Confirma tu identidad", exact: true }),
+  ).toHaveCount(0)
+})
+
+for (const code of ["RECOVERY_NOT_CONFIGURED", "RECOVERY_BUSY"])
+  test(`queued password recovery ${code} does not claim delivery`, async ({
+    page,
+  }) => {
+    const state = await setup(page)
+    state.error = {
+      path: "/auth/password/forgot",
+      method: "POST",
+      status: 503,
+      code,
+    }
+    await page
+      .getByRole("button", { name: "¿Olvidaste tu contraseña?", exact: true })
+      .click()
+    await page
+      .getByLabel("Correo electrónico", { exact: true })
+      .fill("disposable@example.test")
+    await page
+      .getByRole("button", { name: "Enviar enlace", exact: true })
+      .click()
+    await expect(page.getByRole("alert")).toContainText(code)
+    await expect(page.getByRole("status")).toHaveCount(0)
   })

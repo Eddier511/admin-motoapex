@@ -99,6 +99,7 @@ export function ResourceModule({ kind }: { kind: string }) {
       )
       const clean = editable(schema.fields, d)
       if (id) clean.id = d.id
+      if (kind === "banners") clean.pageId = d.pageId ?? null
       setForm(clean)
     } catch (e) {
       setError(errorMessage(e))
@@ -234,9 +235,9 @@ export function ResourceModule({ kind }: { kind: string }) {
                   remote.data!.refs.motorcycles || [],
                 )
               if (kind === "banners") {
-                body.startsAt = null
-                body.endsAt = null
-                body.pageId = null
+                body.startsAt = form.startsAt ?? null
+                body.endsAt = form.endsAt ?? null
+                body.pageId = form.pageId ?? null
               }
               if (kind === "users") {
                 if (!body.newPassword) delete body.newPassword

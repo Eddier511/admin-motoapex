@@ -1,0 +1,17 @@
+Trabaja en Eddier511/api-motoapex. Verifica las correcciones ya realizadas; no rehagas la implementación ni asumas que están en main o instaladas en Hostinger.
+
+Revisa primero estado local, ramas y PR. Lee el PR #5, codex/security-hardening, revisión 256801cea0e35e826d9722f6a8e20cbc7fccdabf, o una revisión posterior comprobada, junto con docs/contract.md, docs/accounts-install.md y docs/security-hardening.md. Conserva sus dependencias sobre los PR #1–#4.
+
+Comprueba con las pruebas existentes y una base aislada desechable:
+- inventory.manage obligatorio al cambiar cantidades; omitir inventory en PUT conserva existencias. Un editor no ajusta stock; una edición editorial no altera cantidades ni pierde cambios concurrentes.
+- Autenticación normal, MFA, cambio obligatorio, MFA seguido de cambio, reauth por propósito/sesión/vencimiento/uso único, revocación, LAST_ADMIN y permisos efectivos. Determina si /auth/me expone grants para roles delegados; no inventes permisos ni cambies el contrato silenciosamente.
+- Recuperación genérica sin consulta de usuarios/SMTP durante HTTP; cola cifrada, migración 006, worker CLI, leases, reintentos, invalidación y limpieza de payloads. SMTP_NOT_CONFIGURED, RECOVERY_NOT_CONFIGURED y RECOVERY_BUSY reales. Usa SMTP local desechable, sin correos de producción.
+- Paginación limit/cursor con data como array, X-Next-Cursor/X-Page-Limit expuestos por CORS, páginas vacías con cursor, PAGE_TOO_LARGE y PAGINATION_REQUIRED. Sin truncamientos, duplicados o datos privados expuestos.
+- Compatibilidad con el admin: PUT completo, inventario sin cambios para editores, precios/moneda por moto, fechas con zona, banners label/href y conservación de vigencia/pageId, contacto singleton, asignables id/name y respuestas de eliminación deleted:true. Rechazar imágenes HTTPS que incluyan credenciales.
+- Runtime PHP parcheado exigido por esa revisión, PDO/Sodium, integridad/avisos PHPMailer, gateway 403/413 y paquete con código/configuración privados fuera de public_html.
+
+API actual: https://darksalmon-quetzal-730302.hostingersite.com/v1. Futura: https://api.motoapexcr.com/v1.
+
+En producción limita la verificación a GET/OPTIONS sin credenciales. El admin observó /public/brands?limit=1 devolviendo cuatro registros sin X-Page-Limit ni X-Next-Cursor: verifica qué paquete está instalado; CI exitoso no prueba despliegue. No crees/edites/elimines usuarios, no cambies configuración, no envíes correos/leads, no uses contraseñas publicadas en chats ni ejecutes exploits.
+
+Entrega revisión exacta, CI/pruebas realizadas, diferencias entre código y despliegue, instalación pendiente de migraciones/worker/PHP y hallazgos con severidad/evidencia. No modifiques archivos, hagas merge ni despliegues durante esta verificación. Si encuentras un fallo, propón la corrección y espera autorización.

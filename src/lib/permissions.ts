@@ -1,10 +1,11 @@
 import type { User } from "../types"
 
-const defaults: Record<User["role"], string[]> = {
+const defaults: Record<string, string[]> = {
   admin: [
     "motorcycles.read",
     "motorcycles.write",
     "motorcycles.publish",
+    "inventory.manage",
     "brands.manage",
     "categories.manage",
     "leads.manage",
@@ -24,23 +25,24 @@ const defaults: Record<User["role"], string[]> = {
 
   marketing: ["motorcycles.read", "promotions.manage", "content.manage"],
 
-  sales: ["leads.manage"],
+  sales: ["leads.manage", "inventory.manage"],
 }
 
-// Current /auth/me exposes role, not permission grants. Server checks role_permissions.
-
-// If explicit grants become available they narrow the UI; a 403 always remains authoritative.
-
-export function can(user: User | null, permission: string) {
-  return (
-    !!user &&
-    defaults[user.role]?.includes(permission) &&
-    (!user.permissions || user.permissions.includes(permission))
-  )
+// Use effective permissions when the API supplies them; otherwise use its documented initial roles.
+// This only controls the UI. Every write still needs authorization on the server.
+export function can(user: User | null, permission: string): boolean {
+  if (!user) return false
+  return user.permissions
+    ? user.permissions.includes(permission)
+    : !!defaults[user.role]?.includes(permission)
 }
 
 export function canReadCatalog(user: User | null) {
-  return can(user, "motorcycles.read")
+  return (
+    !!user &&
+    ["admin", "editor", "marketing"].includes(user.role) &&
+    can(user, "motorcycles.read")
+  )
 }
 
 export function canDelete(user: User | null, permission: string) {

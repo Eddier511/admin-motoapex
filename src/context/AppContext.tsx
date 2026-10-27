@@ -123,6 +123,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setExpiresAt("")
     setCurrentPage("login")
     setPageParams({})
+    setCodes([])
+    toast.dismiss()
   }, [])
   useEffect(() => {
     if (!expiresAt) return
@@ -165,17 +167,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const can = (permission: string) => hasPermission(user, permission)
 
-  useEffect(
-    () =>
-      onUnauthorized(() => {
-        setUser(null)
-        setCurrentPage("login")
-        setPageParams({})
-        setChallenge(null)
-        setExpiresAt("")
-      }),
-    [],
-  )
+  useEffect(() => onUnauthorized(clearSession), [clearSession])
+  useEffect(() => {
+    if (!codes.length) return
+    const timer = setTimeout(() => setCodes([]), 5 * 60 * 1000)
+    return () => clearTimeout(timer)
+  }, [codes])
 
   const navigate = useCallback(
     (page: Page, params: Record<string, string> = {}) => {
@@ -189,7 +186,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   )
 
   const addToast = useCallback((type: Toast["type"], message: string) => {
-    toast[type](message)
+    if (message) toast[type](message)
   }, [])
 
   const toggleSidebar = useCallback(() => setSidebarCollapsed((c) => !c), [])
@@ -225,10 +222,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [])
   const login = useCallback(
     async (email: string, password: string) => {
-      setChallenge(null)
+      clearSession()
       await acceptSession(await auth.login(email.trim(), password))
     },
-    [acceptSession],
+    [acceptSession, clearSession],
   )
   const completeChallenge = async (fields: {
     code?: string
@@ -257,8 +254,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     setLoggingOut(true)
 
+    const revocation = auth.logout()
+    clearSession()
     try {
-      await auth.logout()
+      await revocation
       addToast("success", "Sesión cerrada")
     } catch (error) {
       addToast(
@@ -267,7 +266,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           errorMessage(error),
       )
     } finally {
-      clearSession()
       setLoggingOut(false)
     }
   }, [loggingOut, addToast, clearSession])

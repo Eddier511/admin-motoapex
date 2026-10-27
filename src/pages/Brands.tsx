@@ -12,6 +12,7 @@ import { canDelete } from "../lib/permissions"
 
 import { Badge } from "../components/ui/Badge"
 
+import { https } from "../lib/moduleSchemas"
 import { useApp } from "../context/AppContext"
 
 import type { Brand } from "../types"
@@ -83,6 +84,18 @@ export function Brands() {
       return
     }
 
+    if (
+      [form.logo, form.heroImageUrl, form.tileImageUrl].some(
+        (url) => url && !https(url),
+      )
+    ) {
+      setError("Las imágenes requieren enlaces HTTPS sin credenciales.")
+      addToast(
+        "warning",
+        "Las imágenes requieren enlaces HTTPS sin credenciales.",
+      )
+      return
+    }
     setBusy(true)
     setError("")
 

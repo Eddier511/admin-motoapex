@@ -353,8 +353,8 @@ export function Account() {
                         ),
                       )
                       setUri("")
-                      revealCodes(result.recoveryCodes)
                       clearSession()
+                      revealCodes(result.recoveryCodes)
                     })
                   }}
                 >

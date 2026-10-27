@@ -343,7 +343,9 @@ export function Inventory() {
                 </td>
                 <td>
                   <button
-                    disabled={!can("motorcycles.write")}
+                    disabled={
+                      !can("motorcycles.write") || !can("inventory.manage")
+                    }
                     onClick={() =>
                       navigate("motorcycle-form", {
                         id: m.id,
