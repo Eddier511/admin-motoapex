@@ -1021,6 +1021,101 @@ test("promotion cannot save a selected motorcycle without gallery photos", async
     ),
   ).toBeFalsy()
 })
+
+for (const width of [390, 1440])
+  test(`module editor is a focused popup with keyboard dismissal at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    const state = await setup(page)
+    await login(page)
+    await nav(page, "Promociones")
+    await page.getByRole("button", { name: "Editar / detalle" }).click()
+    const dialog = page.getByRole("dialog", { name: "Editar · Promociones" })
+    await expect(dialog).toBeVisible()
+    expect(
+      await page.locator("#root").evaluate((root) => root.inert),
+    ).toBeTruthy()
+    await expect(page.locator(".resource-module .module-editor")).toHaveCount(0)
+    const box = await dialog.boundingBox()
+    expect(box!.width).toBeLessThanOrEqual(width)
+    expect(box!.height).toBeLessThanOrEqual(900)
+    expect(
+      await dialog.evaluate((node) => node.scrollWidth <= node.clientWidth),
+    ).toBeTruthy()
+    await dialog
+      .getByLabel("Título", { exact: true })
+      .fill("Unsaved popup edit")
+    await page.screenshot({
+      path: `test-results/promotion-editor-${width}.png`,
+    })
+    await page.keyboard.press("Escape")
+    await expect(dialog).toHaveCount(0)
+    await expect(
+      page.getByRole("button", { name: "Editar / detalle" }),
+    ).toBeFocused()
+    expect(state.calls.some((call) => call.method === "PUT")).toBeFalsy()
+    expect(
+      await page.locator("#root").evaluate((root) => root.inert),
+    ).toBeFalsy()
+  })
+
+test("promotion status switch preserves a fresh full document and confirms only the server result", async ({
+  page,
+}) => {
+  const state = await setup(page)
+  state.docs.promotions[0].startsAt = null
+  state.docs.promotions[0].endsAt = null
+  await login(page)
+  await nav(page, "Promociones")
+  const toggle = page.getByRole("switch", {
+    name: "Estado de Internal campaign",
+  })
+  await expect(toggle).not.toBeChecked()
+  // Change a server field after the table loads; quick activation must not overwrite it.
+  state.docs.promotions[0].description = "Fresh server description"
+  await toggle.click()
+  await expect(toggle).toBeChecked()
+  await expect(
+    page.getByText("Promoción activada", { exact: true }),
+  ).toBeVisible()
+  const first = state.calls.find(
+    (call) => call.path === "/admin/promotions/8" && call.method === "PUT",
+  )
+  expect(first.body).toEqual({
+    ...editable(schemas.promotions.fields, state.docs.promotions[0]),
+    status: "active",
+  })
+  expect(first.body).toMatchObject({
+    startsAt: null,
+    endsAt: null,
+    imageUrl: documents.promotions.imageUrl,
+    buttonHref: "/catalogo",
+    description: "Fresh server description",
+  })
+  expect(first.body.id).toBeUndefined()
+  // A rejected write leaves the badge and switch in their confirmed state.
+  state.error = {
+    path: "/admin/promotions/8",
+    method: "PUT",
+    status: 403,
+    code: "FORBIDDEN",
+  }
+  await toggle.click()
+  await expect(page.getByRole("alert").first()).toBeVisible()
+  await expect(toggle).toBeEnabled()
+  await expect(
+    page.getByText("Promoción desactivada", { exact: true }),
+  ).toHaveCount(0)
+  await expect(toggle).toBeChecked()
+  expect(state.docs.promotions[0].status).toBe("active")
+  state.error = null
+  await toggle.click()
+  await expect(toggle).not.toBeChecked()
+  await expect(
+    page.getByText("Promoción desactivada", { exact: true }),
+  ).toBeVisible()
+})
 test("web content opens banners without pages or page-related requests", async ({
   page,
 }) => {

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useApp } from "../context/AppContext"
 import { request, errorMessage } from "../lib/api"
 import { useRemote } from "../lib/useRemote"
@@ -12,6 +12,7 @@ import { ModuleFields } from "../components/ui/ModuleFields"
 import { RemoteState } from "../components/ui/RemoteState"
 import { Badge } from "../components/ui/Badge"
 import { promotionFields, promotionPayload } from "../lib/promotionEditor"
+import { EditorModal } from "../components/ui/EditorModal"
 
 export function ResourceModule({ kind }: { kind: string }) {
   const schema = schemas[kind]
@@ -21,6 +22,8 @@ export function ResourceModule({ kind }: { kind: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [promotionSchedule, setPromotionSchedule] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
+  const editorTrigger = useRef<HTMLElement | null>(null)
   const remote = useRemote(
     async (signal) => {
       const items = await request<Doc[] | Doc>(`/admin/${kind}`, { signal })
@@ -94,6 +97,7 @@ export function ResourceModule({ kind }: { kind: string }) {
   const run = <T,>(fn: (t?: string) => Promise<T>) =>
     schema.sensitive ? sensitive(schema.sensitive, fn) : fn()
   async function edit(id?: string) {
+    editorTrigger.current = document.activeElement as HTMLElement | null
     setBusy(true)
     setError("")
     try {
@@ -111,6 +115,49 @@ export function ResourceModule({ kind }: { kind: string }) {
       addToast("error", errorMessage(e))
     } finally {
       setBusy(false)
+    }
+  }
+  async function togglePromotion(item: Doc) {
+    if (busy || !can("promotions.manage")) return
+    const next = item.status === "active" ? "inactive" : "active"
+    setBusy(true)
+    setPendingStatus(item.id)
+    setError("")
+    try {
+      // PUT replaces the entire document: fetch fresh data and whitelist editable
+      // fields, preserving images, dates, CTA and all motorcycle price pairs.
+      const path = `/admin/promotions/${encodeURIComponent(item.id)}`
+      const current = await request<Doc>(path)
+      const body = {
+        ...editable(schemas.promotions.fields, current),
+        status: next,
+      }
+      const saved = await request<Doc>(path, {
+        method: "PUT",
+        body: JSON.stringify(body),
+      })
+      if (saved.status !== next)
+        throw new Error("La API no confirmó el cambio de estado.")
+      remote.setData((previous) =>
+        previous
+          ? {
+              ...previous,
+              items: previous.items.map((row) =>
+                row.id === saved.id ? saved : row,
+              ),
+            }
+          : previous,
+      )
+      addToast(
+        "success",
+        next === "active" ? "Promoción activada" : "Promoción desactivada",
+      )
+    } catch (e) {
+      setError(errorMessage(e))
+      addToast("error", errorMessage(e))
+    } finally {
+      setBusy(false)
+      setPendingStatus(null)
     }
   }
   async function destroy(item: Doc) {
@@ -149,6 +196,7 @@ export function ResourceModule({ kind }: { kind: string }) {
           className="module-primary"
           disabled={busy}
           onClick={() => {
+            editorTrigger.current = document.activeElement as HTMLElement | null
             setError("")
             setPromotionSchedule(false)
             schema.singleton
@@ -188,7 +236,31 @@ export function ResourceModule({ kind }: { kind: string }) {
                   )}
                 </td>
                 <td className="p-4">
-                  {item.status && <Badge status={item.status} />}
+                  <div className="flex items-center gap-3">
+                    {item.status && <Badge status={item.status} />}
+                    {kind === "promotions" && (
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={item.status === "active"}
+                        aria-label={`Estado de ${item.title}`}
+                        aria-busy={pendingStatus === item.id}
+                        title={
+                          item.status === "active"
+                            ? "Desactivar promoción"
+                            : "Activar promoción"
+                        }
+                        disabled={busy}
+                        onClick={() => void togglePromotion(item)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:opacity-50 ${item.status === "active" ? "bg-orange-500" : "bg-zinc-300"}`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${item.status === "active" ? "translate-x-6" : "translate-x-1"}`}
+                        />
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td className="p-4">
                   <div className="flex gap-3">
@@ -222,10 +294,15 @@ export function ResourceModule({ kind }: { kind: string }) {
         )}
       </div>
       {form && (
-        <section className="module-editor border rounded-xl bg-card p-4 sm:p-6 space-y-5">
-          <h3 className="font-semibold">
-            {form.id || schema.singleton ? "Editar" : "Crear"} · {schema.title}
-          </h3>
+        <EditorModal
+          title={`${form.id || schema.singleton ? "Editar" : "Crear"} · ${schema.title}`}
+          busy={busy}
+          returnFocus={editorTrigger.current}
+          onClose={() => {
+            setForm(null)
+            setError("")
+          }}
+        >
           <form
             className="space-y-5"
             onSubmit={async (e) => {
@@ -365,7 +442,7 @@ export function ResourceModule({ kind }: { kind: string }) {
               </button>
             </div>
           </form>
-        </section>
+        </EditorModal>
       )}
     </div>
   )

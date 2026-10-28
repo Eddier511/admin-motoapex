@@ -33,6 +33,10 @@ Promociones oculta slug, imagen y destino manual. Al crear genera un slug a part
 
 ### Promociones sin fechas — dependencia de instalación
 
+Los formularios de estos módulos se abren en un popup centrado, con fondo gris, desplazamiento interno y cierre mediante Cancelar, X, Escape o clic fuera cuando no se está guardando. El foco queda dentro y vuelve al botón que abrió el editor; la reautenticación de usuarios suspende el formulario mientras solicita identidad.
+
+La columna Estado de Promociones incorpora un interruptor accesible. Lee la ficha actual y envía un PUT completo con campos editables, cambiando únicamente status. Conserva imagen, destino, fechas y todas las parejas de precios/monedas de las motos; no deriva estado de la fecha. No actualiza el estado visual ni muestra toast de éxito hasta recibir una respuesta válida con el estado solicitado. Un error conserva el estado confirmado y permite reintentar. Requiere promotions.manage y la API sigue siendo autoridad.
+
 Contrato verificado en API commit `3ed3ef2f4ed673ba6648a10fe88cc75334592cc0`, PR #6, rama `codex/promotions-optional-dates`. No asumir que está en main o instalado. Antes de usar promociones sin límites, instalar esa revisión de API y `database/007_optional_promotion_dates.sql`, después de 006 y un respaldo. El frontend no ejecuta migraciones ni despliega la API.
 
 POST/PUT incluyen siempre startsAt y endsAt: null/null sin límite, inicio/null desde inicio, null/fin hasta fin y ambas con rango inclusivo. No se envían cadenas vacías, "null", claves omitidas ni fechas inventadas. El DTO y la validación de respuestas aceptan únicamente null o fechas válidas con zona; rechazan claves ausentes y límites invertidos. No se calcula expired desde el navegador: se conserva el estado explícito del servidor.

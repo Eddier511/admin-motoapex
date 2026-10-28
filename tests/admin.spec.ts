@@ -358,7 +358,10 @@ test("full PUT preserves publication, prices, currency, specs, galleries and ser
     .getByLabel("Enlace HTTPS")
     .last()
     .fill("https://example.test/black.jpg")
-  await page.getByRole("button", { name: "Guardar ficha", exact: true }).click()
+  // Save by keyboard while the stacked Sonner messages occupy the top-right.
+  await page
+    .getByRole("button", { name: "Guardar ficha", exact: true })
+    .press("Enter")
 
   await expect.poll(() => state.motorcycles[0].colors.length).toBe(2)
 
@@ -367,7 +370,9 @@ test("full PUT preserves publication, prices, currency, specs, galleries and ser
     .last()
     .click()
   await page.getByLabel("Cantidad total").fill("9")
-  await page.getByRole("button", { name: "Guardar ficha", exact: true }).click()
+  await page
+    .getByRole("button", { name: "Guardar ficha", exact: true })
+    .press("Enter")
   await expect.poll(() => state.motorcycles[0].inventory).toBe(9)
 
   const last = state.calls.filter((c) => c.method === "PUT").at(-1)!
