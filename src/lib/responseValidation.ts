@@ -1,3 +1,5 @@
+import { promotionDatesValid } from "./promotionDates"
+
 type RecordValue = Record<string, unknown>
 const object = (v: unknown): v is RecordValue =>
   !!v && typeof v === "object" && !Array.isArray(v)
@@ -80,6 +82,7 @@ function resource(kind: string, v: unknown): boolean {
     case "motorcycles":
       return text(v.model) && ["CRC", "USD"].includes(String(v.currency))
     case "promotions":
+      return text(v.title) && promotionDatesValid(v)
     case "banners":
     case "pages":
       return text(v.title)

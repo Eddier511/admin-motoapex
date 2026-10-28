@@ -1,3 +1,5 @@
+import { promotionDatesValid } from "./promotionDates"
+
 export type Doc = Record<string, any>
 export type Field = {
   key: string
@@ -122,8 +124,8 @@ export const schemas: Record<string, Schema> = {
       imageUrl: "",
       brandId: null,
       motorcycles: [],
-      startsAt: "",
-      endsAt: "",
+      startsAt: null,
+      endsAt: null,
       status: "inactive",
       featured: false,
       showOnHome: false,
@@ -181,7 +183,7 @@ export const schemas: Record<string, Schema> = {
           select("currency", "Moneda", ["CRC", "USD"]),
         ],
       },
-      ...dates.map((f) => ({ ...f, nullable: false, required: true })),
+      ...dates,
       select("status", "Estado", ["active", "inactive", "expired"]),
       { key: "featured", label: "Destacada", type: "boolean" },
       { key: "showOnHome", label: "Mostrar en inicio", type: "boolean" },
@@ -444,8 +446,8 @@ export function validateModule(
       return "Selecciona al menos una motocicleta para la promoción."
     if (!doc.imageUrl)
       return "La primera motocicleta seleccionada necesita una foto HTTPS en su galería."
-    if (!doc.startsAt || !doc.endsAt)
-      return "Selecciona las fechas de inicio y finalización."
+    if (!promotionDatesValid(doc))
+      return "Revisa las fechas de la promoción o déjalas vacías para no limitar su vigencia."
     const seen = new Set<string>()
     for (const item of doc.motorcycles) {
       const moto = refs.motorcycles?.find((m) => m.id === item.motorcycleId)

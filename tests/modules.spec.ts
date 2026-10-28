@@ -803,6 +803,7 @@ test("promotion validates prices and currency without writes and can POST valid 
     .getByRole("button", { name: "Cancelar", exact: true })
     .click()
   await page.getByRole("button", { name: "Crear registro" }).click()
+  await page.getByLabel("Programar vigencia (opcional)").check()
   for (const [label, val] of Object.entries({
     Título: "Disposable campaign",
     Descripción: "Test",
@@ -876,6 +877,118 @@ test("promotion validates prices and currency without writes and can POST valid 
   await expect(
     page.getByLabel("Fecha de finalización", { exact: true }),
   ).toHaveValue("2026-12-01")
+})
+
+for (const [start, end] of [
+  [null, null],
+  ["2026-10-01T13:25:36Z", null],
+  [null, "2026-12-01T16:45:37Z"],
+  ["2026-10-01T13:25:36Z", "2026-12-01T16:45:37Z"],
+] as const)
+  test(`promotion preserves optional dates ${start}/${end} and removes limits explicitly`, async ({
+    page,
+  }) => {
+    const state = await setup(page)
+    state.docs.promotions[0].startsAt = start
+    state.docs.promotions[0].endsAt = end
+    await login(page)
+    await nav(page, "Promociones")
+    await page.getByRole("button", { name: "Editar / detalle" }).click()
+    const editor = page.locator(".module-editor")
+    await expect(
+      editor.getByLabel("Programar vigencia (opcional)"),
+    ).toBeChecked({ checked: !!(start || end) })
+    await editor.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect(
+      page.getByText("Guardado correctamente", { exact: true }),
+    ).toBeVisible()
+    const put = state.calls.find(
+      (c) => c.path === "/admin/promotions/8" && c.method === "PUT",
+    )
+    expect(put.body).toMatchObject({
+      startsAt: start,
+      endsAt: end,
+      motorcycles: editable(schemas.promotions.fields, documents.promotions)
+        .motorcycles,
+    })
+    await page.getByRole("button", { name: "Editar / detalle" }).click()
+    await editor.getByLabel("Programar vigencia (opcional)").uncheck()
+    await expect(editor.locator('input[type="date"]')).toHaveCount(0)
+    await editor.getByRole("button", { name: "Guardar", exact: true }).click()
+    await expect
+      .poll(
+        () =>
+          state.calls.filter(
+            (c) => c.path === "/admin/promotions/8" && c.method === "PUT",
+          ).length,
+      )
+      .toBe(2)
+    const last = state.calls
+      .filter((c) => c.path === "/admin/promotions/8" && c.method === "PUT")
+      .at(-1)
+    expect(last.body).toMatchObject({ startsAt: null, endsAt: null })
+  })
+
+test("new promotion defaults to no dates and a 422 never confirms a save", async ({
+  page,
+}) => {
+  const state = await setup(page)
+  await login(page)
+  await nav(page, "Promociones")
+  await page.getByRole("button", { name: "Crear registro" }).click()
+  const editor = page.locator(".module-editor")
+  await expect(editor.locator('input[type="date"]')).toHaveCount(0)
+  await editor
+    .getByLabel("Título", { exact: true })
+    .fill("Oferta sin vencimiento")
+  await editor.getByLabel("Texto del botón", { exact: true }).fill("Ver oferta")
+  await editor
+    .getByRole("button", {
+      name: "Agregar motocicletas de la promoción",
+      exact: true,
+    })
+    .click()
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Motocicleta", { exact: true })
+    .selectOption("3")
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Moneda", { exact: true })
+    .selectOption("USD")
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Precio original", {
+      exact: true,
+    })
+    .fill("100")
+  await editor
+    .getByLabel("Motocicletas de la promoción 1 · Precio promocional", {
+      exact: true,
+    })
+    .fill("90")
+  state.error = {
+    path: "/admin/promotions",
+    method: "POST",
+    status: 422,
+    code: "VALIDATION_ERROR",
+  }
+  await editor.getByRole("button", { name: "Guardar", exact: true }).click()
+  await expect(editor.getByRole("alert")).toBeVisible()
+  await expect(
+    page.getByText("Guardado correctamente", { exact: true }),
+  ).toHaveCount(0)
+  expect(state.docs.promotions).toHaveLength(1)
+  state.error = null
+  await editor.getByRole("button", { name: "Guardar", exact: true }).click()
+  await expect(
+    page.getByText("Guardado correctamente", { exact: true }),
+  ).toBeVisible()
+  const post = state.calls
+    .filter((c) => c.path === "/admin/promotions" && c.method === "POST")
+    .at(-1)
+  expect(post.body).toMatchObject({ startsAt: null, endsAt: null })
+  await page.getByRole("button", { name: "Editar / detalle" }).last().click()
+  await expect(
+    editor.getByLabel("Programar vigencia (opcional)"),
+  ).not.toBeChecked()
 })
 
 test("promotion cannot save a selected motorcycle without gallery photos", async ({

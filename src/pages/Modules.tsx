@@ -20,6 +20,7 @@ export function ResourceModule({ kind }: { kind: string }) {
   const [form, setForm] = useState<Doc | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
+  const [promotionSchedule, setPromotionSchedule] = useState(false)
   const remote = useRemote(
     async (signal) => {
       const items = await request<Doc[] | Doc>(`/admin/${kind}`, { signal })
@@ -86,7 +87,9 @@ export function ResourceModule({ kind }: { kind: string }) {
       : kind === "banners"
         ? schema.fields.filter((f) => f.type !== "date")
         : kind === "promotions"
-          ? promotionFields(schema.fields)
+          ? promotionFields(schema.fields).filter(
+              (f) => promotionSchedule || f.type !== "date",
+            )
           : schema.fields
   const run = <T,>(fn: (t?: string) => Promise<T>) =>
     schema.sensitive ? sensitive(schema.sensitive, fn) : fn()
@@ -100,6 +103,8 @@ export function ResourceModule({ kind }: { kind: string }) {
       const clean = editable(schema.fields, d)
       if (id) clean.id = d.id
       if (kind === "banners") clean.pageId = d.pageId ?? null
+      if (kind === "promotions")
+        setPromotionSchedule(clean.startsAt !== null || clean.endsAt !== null)
       setForm(clean)
     } catch (e) {
       setError(errorMessage(e))
@@ -145,6 +150,7 @@ export function ResourceModule({ kind }: { kind: string }) {
           disabled={busy}
           onClick={() => {
             setError("")
+            setPromotionSchedule(false)
             schema.singleton
               ? void edit()
               : setForm(structuredClone(schema.initial))
@@ -306,6 +312,21 @@ export function ResourceModule({ kind }: { kind: string }) {
               }
             }}
           >
+            {kind === "promotions" && (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={promotionSchedule}
+                  disabled={busy}
+                  onChange={(e) => {
+                    setPromotionSchedule(e.target.checked)
+                    if (!e.target.checked)
+                      setForm({ ...form, startsAt: null, endsAt: null })
+                  }}
+                />
+                Programar vigencia (opcional)
+              </label>
+            )}
             <ModuleFields
               fields={fields}
               value={form}
@@ -316,8 +337,10 @@ export function ResourceModule({ kind }: { kind: string }) {
             {kind === "promotions" && (
               <p className="text-sm text-zinc-500 sm:col-span-2">
                 La imagen se toma de la primera motocicleta seleccionada. La
-                promoción termina al finalizar el día indicado, hora de Costa
-                Rica. El botón está asociado a las motocicletas de la promoción.
+                promoción no tiene límite de fechas si dejas la vigencia vacía.
+                Si eliges una fecha final, termina al finalizar ese día, hora de
+                Costa Rica. El botón está asociado a las motocicletas de la
+                promoción.
               </p>
             )}
             {error && (

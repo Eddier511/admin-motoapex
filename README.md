@@ -50,6 +50,8 @@ Carga real, vacíos, validaciones, reintentos y avisos de éxito únicamente tra
 
 ## Hostinger
 
+Promociones sin fechas: requieren API PR #6 (`codex/promotions-optional-dates`, revisión `3ed3ef2f4ed673ba6648a10fe88cc75334592cc0`) y migración `007_optional_promotion_dates.sql` después de 006. No están implícitas en main ni instaladas por este push. El admin crea sin vigencia por defecto y envía ambas claves como null; la programación es opcional y preserva límites existentes. Ver [contrato e instalación](docs/integration-verification.md#promociones-sin-fechas--dependencia-de-instalación).
+
 1. Respaldo y revisión de schema_migrations en la API. Aplicar en orden solo las pendientes: 002_api_support.sql, 003_promotions.sql, 004_web_content.sql, 005_accounts.sql y 006_security_hardening.sql. **No reimportar schema.sql.** La 005 revoca sesiones anteriores.
 2. Usar paquete API que incluya los cuatro PR. PHP 8.3.36+/8.4.27+/8.5.12+, PDO MySQL, Sodium y SMTP/cifrado según accounts-install.md. Configuración privada fuera de public_html, jamás en frontend. password_reset_url debe apuntar al HTTPS exacto del admin terminado en /reset-password.
 3. CORS: origen exacto del admin, Authorization y X-Reauth-Token; exponer X-Request-ID/Retry-After.

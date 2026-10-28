@@ -1,7 +1,9 @@
 import { type Doc, type Field, https } from "./moduleSchemas"
+import { type PromotionDates } from "./promotionDates"
 
 // Promotion days follow Costa Rica, independently of the browser timezone.
-export function promotionDay(value: string): string {
+export function promotionDay(value: string | null): string {
+  if (!value) return ""
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value
   const date = new Date(value)
   if (!value || Number.isNaN(date.getTime())) return ""
@@ -32,7 +34,10 @@ export function promotionFields(fields: Field[]): Field[] {
     )
 }
 
-export function promotionPayload(body: Doc, motorcycles: Doc[]): Doc {
+export function promotionPayload(
+  body: Doc,
+  motorcycles: Doc[],
+): Doc & PromotionDates {
   const motorcycle = motorcycles.find(
     (m) => String(m.id) === body.motorcycles?.[0]?.motorcycleId,
   )
@@ -50,8 +55,17 @@ export function promotionPayload(body: Doc, motorcycles: Doc[]): Doc {
     .replace(/^-|-$/g, "")
     .slice(0, 160)
     .replace(/-$/g, "")
-  const start = promotionDay(body.startsAt || "")
-  const end = promotionDay(body.endsAt || "")
+  const boundary = (
+    value: string | null | undefined,
+    end: boolean,
+  ): string | null => {
+    if (value == null || value === "") return null
+    // Preserve an existing instant, including its time and explicit zone.
+    // Only a newly selected calendar day becomes a Costa Rica day boundary.
+    return /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? `${value}T${end ? "23:59:59" : "00:00:00"}-06:00`
+      : value
+  }
   return {
     ...body,
     slug:
@@ -60,7 +74,7 @@ export function promotionPayload(body: Doc, motorcycles: Doc[]): Doc {
     imageUrl: image?.url || "",
     // Safe navigation fallback; the web must implement the linked modal using motorcycleId.
     buttonHref: "/motocicletas",
-    startsAt: start ? `${start}T00:00:00-06:00` : "",
-    endsAt: end ? `${end}T23:59:59-06:00` : "",
+    startsAt: boundary(body.startsAt, false),
+    endsAt: boundary(body.endsAt, true),
   }
 }
